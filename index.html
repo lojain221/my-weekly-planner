@@ -269,6 +269,11 @@
   }
   @keyframes toastIn{from{opacity:0;transform:translateY(14px);}to{opacity:1;transform:translateY(0);}}
   @keyframes toastOut{to{opacity:0;transform:translateY(10px);}}
+  .celebration-toast{
+    background:linear-gradient(135deg, var(--card-hi), var(--purple));
+    border-color:rgba(255,255,255,0.25);text-align:center;font-size:15px;
+  }
+  .celebration-emoji{font-size:18px;margin-right:6px;}
 
   /* ---------- RTL adjustments ---------- */
   html[dir="rtl"] .header-title, html[dir="rtl"] .field label{text-align:right;}
@@ -510,7 +515,7 @@
       seedMedal:"Seed — just getting started", happyBirthday:"🎉 Happy Birthday! Enjoy your day 🎉",
       ramadanBanner:"🌙 Ramadan Kareem — blessed month ahead", eidFitrBanner:"✨ Eid al-Fitr Mubarak! ✨",
       eidAdhaBanner:"✨ Eid al-Adha Mubarak! ✨", weekMon:"Mon", weekTue:"Tue", weekWed:"Wed", weekThu:"Thu",
-      weekFri:"Fri", weekSat:"Sat", weekSun:"Sun"
+      weekFri:"Fri", weekSat:"Sat", weekSun:"Sun", dayCompleteMsg:"All done for today — nice work!"
     },
     ar:{
       brandLine:"نايت<span>بلوم</span>", brandSub:"أسبوعك، عاداتك، إيقاعك الخاص.",
@@ -534,7 +539,7 @@
       seedMedal:"بداية — لا تزال في البداية", happyBirthday:"🎉 عيد ميلاد سعيد! استمتع بيومك 🎉",
       ramadanBanner:"🌙 رمضان كريم — شهر مبارك", eidFitrBanner:"✨ عيد فطر مبارك! ✨",
       eidAdhaBanner:"✨ عيد أضحى مبارك! ✨", weekMon:"إثنين", weekTue:"ثلاثاء", weekWed:"أربعاء", weekThu:"خميس",
-      weekFri:"جمعة", weekSat:"سبت", weekSun:"أحد"
+      weekFri:"جمعة", weekSat:"سبت", weekSun:"أحد", dayCompleteMsg:"انتهيت من كل شيء اليوم — عمل رائع!"
     }
   };
 
@@ -606,69 +611,21 @@
   function uid(){ return Date.now().toString(36)+Math.random().toString(36).slice(2,7); }
 
   /* ============================================================
-     5. AUDIO — organic-ish vocal cheer synthesis (Web Audio API)
-     Note: true recorded vocals aren't possible without an audio file,
-     so this layers pitch-bent harmonic tones + filtered noise bursts
-     (formant-style bandpass sweep) to approximate an excited human
-     "Yay!" / crowd cheer rather than a flat digital beep.
+     5. CELEBRATIONS — visual-only (no Web Audio at all).
+     A completion event shows confetti plus a small pop-up card;
+     nothing here plays sound, so there's nothing for any mobile
+     browser's autoplay-audio policy to block.
   ============================================================ */
-  var actx = null;
-  function getCtx(){ if(!actx){ actx = new (window.AudioContext||window.webkitAudioContext)(); } return actx; }
-
-  function noiseBuffer(ctx, dur){
-    var buf = ctx.createBuffer(1, ctx.sampleRate*dur, ctx.sampleRate);
-    var data = buf.getChannelData(0);
-    for(var i=0;i<data.length;i++){ data[i] = (Math.random()*2-1) * (1 - i/data.length); }
-    return buf;
-  }
-
-  function playCheer(kind){
+  function showCelebrationCard(message, big){
     try{
-      var ctx = getCtx();
-      if(ctx.state === "suspended"){ ctx.resume(); }
-      var now = ctx.currentTime;
-      var master = ctx.createGain();
-      master.gain.value = 0.0001;
-      master.connect(ctx.destination);
-      master.gain.exponentialRampToValueAtTime(0.5, now+0.04);
-      master.gain.exponentialRampToValueAtTime(0.0001, now + (kind==="big" ? 1.6 : 0.9));
-
-      // Layered "voice" oscillators: a fundamental + harmonics passed through
-      // a moving formant-style bandpass to sound vowel-like ("Yay/Whoo") rather than a beep.
-      var baseFreqs = kind==="big" ? [260,320,392] : [300,360];
-      baseFreqs.forEach(function(f, idx){
-        var osc = ctx.createOscillator();
-        osc.type = "sawtooth";
-        osc.frequency.setValueAtTime(f*0.85, now);
-        osc.frequency.exponentialRampToValueAtTime(f*1.5, now+0.18);
-        osc.frequency.exponentialRampToValueAtTime(f*1.1, now+0.5);
-
-        var formant = ctx.createBiquadFilter();
-        formant.type = "bandpass";
-        formant.Q.value = 6;
-        formant.frequency.setValueAtTime(700, now);
-        formant.frequency.linearRampToValueAtTime(1500, now+0.2);
-        formant.frequency.linearRampToValueAtTime(1000, now+0.6);
-
-        var g = ctx.createGain();
-        g.gain.value = 0.32/baseFreqs.length;
-
-        osc.connect(formant); formant.connect(g); g.connect(master);
-        osc.start(now+idx*0.02);
-        osc.stop(now + (kind==="big"?1.5:0.85));
-      });
-
-      // Crowd-like filtered noise burst for texture (cheer "whoosh"), not a beep.
-      var nsrc = ctx.createBufferSource();
-      nsrc.buffer = noiseBuffer(ctx, kind==="big"?1.4:0.7);
-      var nf = ctx.createBiquadFilter();
-      nf.type = "bandpass"; nf.frequency.value = 1800; nf.Q.value = 0.8;
-      var ng = ctx.createGain(); ng.gain.value = 0.18;
-      nsrc.connect(nf); nf.connect(ng); ng.connect(master);
-      nsrc.start(now);
-
-      if(kind==="big"){ launchConfetti(); }
-    }catch(e){ /* audio unsupported — fail silently */ }
+      var host = document.getElementById("toastHost");
+      var el = document.createElement("div");
+      el.className = "toast celebration-toast";
+      el.innerHTML = '<span class="celebration-emoji">'+(big?"🏆":"🎉")+'</span> '+escapeHtml(message);
+      host.appendChild(el);
+      setTimeout(function(){ if(el && el.parentNode){ el.parentNode.removeChild(el); } }, 3600);
+      launchConfetti(big);
+    }catch(e){ /* never let a celebration failure affect saved data */ }
   }
 
   /* ============================================================
@@ -681,8 +638,9 @@
   function resizeCanvas(){ confettiCanvas.width = window.innerWidth; confettiCanvas.height = window.innerHeight; }
   window.addEventListener("resize", resizeCanvas); resizeCanvas();
   var CONFETTI_COLORS = ["#ffd166","#ff9d5c","#ff7fa6","#b48cff","#ffffff"];
-  function launchConfetti(){
-    for(var i=0;i<70;i++){
+  function launchConfetti(big){
+    var count = big ? 110 : 60;
+    for(var i=0;i<count;i++){
       confettiParticles.push({
         x: Math.random()*confettiCanvas.width, y: -20 - Math.random()*200,
         vx: (Math.random()-0.5)*2, vy: 2+Math.random()*3,
@@ -914,7 +872,7 @@
         st[state.selectedDay][task.id] = !st[state.selectedDay][task.id];
         save("routineStatus", st);
         renderAll();
-        maybeCheerDaily();
+        maybeCelebrateDaily();
       });
       row.querySelector("[data-del]").addEventListener("click", function(){
         var arr = load("routineTasks", []).filter(function(t){return t.id!==task.id;});
@@ -950,7 +908,7 @@
         d[state.selectedDay].forEach(function(t){ if(t.id===task.id) t.done=!t.done; });
         save("dynamicTasks", d);
         renderAll();
-        maybeCheerDaily();
+        maybeCelebrateDaily();
       });
       row.querySelector("[data-del]").addEventListener("click", function(){
         var d = load("dynamicTasks", {});
@@ -1131,7 +1089,7 @@
         lg[todayKey][h.id] = !lg[todayKey][h.id];
         save("habitLog", lg);
         renderAll();
-        maybeCheerDaily();
+        maybeCelebrateDaily();
       });
       row.querySelector("[data-del]").addEventListener("click", function(){
         save("habits", load("habits", []).filter(function(x){return x.id!==h.id;}));
@@ -1192,15 +1150,14 @@
       habitsDoneCount:habitsDone, eventsToday:eventsToday, pct:pct };
   }
 
-  var lastCheerKey = null;
-  function maybeCheerDaily(){
+  function maybeCelebrateDaily(){
     var todayKey = fmtDate(new Date());
     var st = computeDailyStats(todayKey);
-    var cheeredMap = load("cheeredDates", {});
-    if(st.pct>=100 && st.tasksTotal+st.habitsTotal>0 && !cheeredMap[todayKey]){
-      playCheer("big");
-      cheeredMap[todayKey] = true;
-      save("cheeredDates", cheeredMap);
+    var celebratedMap = load("celebratedDates", {});
+    if(st.pct>=100 && st.tasksTotal+st.habitsTotal>0 && !celebratedMap[todayKey]){
+      showCelebrationCard(tr("dayCompleteMsg"), false);
+      celebratedMap[todayKey] = true;
+      save("celebratedDates", celebratedMap);
     }
   }
 
@@ -1245,7 +1202,7 @@
     medalRow.innerHTML = '<div class="medal" style="background:'+bg+';">'+emoji+'</div>';
     document.getElementById("rewardSummaryLine").textContent = tr(tierKey)+" — "+avg+"%";
     rewardModal.classList.remove("hidden");
-    if(avg>=90){ playCheer("big"); }
+    if(avg>=90){ showCelebrationCard(tr(tierKey), true); }
   });
   document.getElementById("closeRewardBtn").addEventListener("click", function(){ rewardModal.classList.add("hidden"); });
 
