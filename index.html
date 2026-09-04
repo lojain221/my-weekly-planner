@@ -735,14 +735,11 @@
     renderAll();
   }
 
-  /* auto-resume session */
-  (function tryResume(){
-    var saved = localStorage.getItem("planner_session");
-    if(saved && USERS.some(function(a){return a.u===saved;})){
-      state.user = saved;
-      enterApp();
-    }
-  })();
+  /* Note: session auto-resume is triggered at the very end of this script,
+     after every other module-level constant (WEEK_KEYS, month names, etc.)
+     has been assigned — see below. Calling it here, before those exist,
+     is what used to throw mid-render on reopen and made saved data look
+     like it had vanished, even though localStorage was untouched. */
 
   /* ============================================================
      8. LANGUAGE
@@ -1245,6 +1242,18 @@
   }
 
   applyLanguage();
+
+  /* Auto-resume a previous session. This runs last, on purpose: every
+     module-level constant used by the render functions it can trigger
+     (WEEK_KEYS, MONTH_NAMES_EN/AR, HIJRI_MONTHS, T, etc.) is guaranteed
+     to be assigned by this point in top-to-bottom script execution. */
+  (function tryResume(){
+    var saved = localStorage.getItem("planner_session");
+    if(saved && USERS.some(function(a){return a.u===saved;})){
+      state.user = saved;
+      enterApp();
+    }
+  })();
 
   /* Refresh theme + reports once a minute in case the day rolls over while app is open */
   setInterval(function(){ if(state.user){ applyThemeOverrides(); renderReports(); } }, 60000);
