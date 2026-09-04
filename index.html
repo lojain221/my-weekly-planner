@@ -259,6 +259,17 @@
   }
   #confettiCanvas{position:fixed;inset:0;pointer-events:none;z-index:300;}
 
+  /* ---------- Toast (non-blocking alert replacement) ---------- */
+  #toastHost{position:fixed;left:0;right:0;bottom:0;display:flex;justify-content:center;z-index:400;pointer-events:none;}
+  .toast{
+    pointer-events:auto;max-width:460px;width:calc(100% - 40px);margin-bottom:110px;
+    background:var(--card-hi);border:1px solid var(--stroke);border-radius:16px;padding:14px 16px;
+    box-shadow:var(--shadow-deep);font-size:14px;font-weight:600;color:var(--text);
+    animation:toastIn .22s ease, toastOut .3s ease 3.2s forwards;
+  }
+  @keyframes toastIn{from{opacity:0;transform:translateY(14px);}to{opacity:1;transform:translateY(0);}}
+  @keyframes toastOut{to{opacity:0;transform:translateY(10px);}}
+
   /* ---------- RTL adjustments ---------- */
   html[dir="rtl"] .header-title, html[dir="rtl"] .field label{text-align:right;}
   html[dir="rtl"] .task-row, html[dir="rtl"] .event-chip, html[dir="rtl"] .habit-row, html[dir="rtl"] .toggle-row{flex-direction:row-reverse;}
@@ -269,6 +280,7 @@
 </head>
 <body>
 <canvas id="confettiCanvas"></canvas>
+<div id="toastHost"></div>
 
 <div id="app">
 
@@ -347,7 +359,7 @@
       <section class="view" id="view-month">
         <div class="month-nav">
           <button id="monthPrev">‹</button>
-          <div class="m-label" id="monthLabel">-<span class="m-sub" id="monthSubLabel"></span></div>
+          <div class="m-label"><span id="monthLabel">-</span><span class="m-sub" id="monthSubLabel"></span></div>
           <button id="monthNext">›</button>
         </div>
         <div class="cal-grid" id="calGrid"></div>
@@ -985,7 +997,7 @@
   function renderMonth(){
     var y = state.monthCursor.getFullYear(), m = state.monthCursor.getMonth();
     var monthNames = state.lang==="ar" ? MONTH_NAMES_AR : MONTH_NAMES_EN;
-    document.getElementById("monthLabel").innerHTML = monthNames[m]+" "+y;
+    document.getElementById("monthLabel").textContent = monthNames[m]+" "+y;
     var firstOfMonth = new Date(y,m,1);
     var hFirst = gregorianToHijri(firstOfMonth);
     document.getElementById("monthSubLabel").textContent = HIJRI_MONTHS[hFirst.m-1]+" "+hFirst.y+" AH (approx.)";
@@ -1072,14 +1084,25 @@
       alertMsg: document.getElementById("eventAlertInput").value.trim(),
       notify: document.getElementById("notifySwitch").classList.contains("on")
     };
+    // Persist first and always close the modal — the save itself must never
+    // be blocked or rolled back by a rendering or notification problem below.
     var events = load("events", {});
     events[state.selectedCalDay] = events[state.selectedCalDay] || [];
     events[state.selectedCalDay].push(ev);
     save("events", events);
     eventModal.classList.add("hidden");
-    renderMonth();
+
+    // Re-render the calendar defensively: if this throws for any reason,
+    // catch it here so the event stays saved and the UI stays interactive
+    // instead of freezing mid-render.
+    try{ renderMonth(); }
+    catch(e){ console.error("renderMonth failed after saving event:", e); }
+
+    // Reminder pop-up: non-blocking toast instead of window.alert(), and
+    // wrapped so a notification failure can never lock up the screen.
     if(ev.notify && ev.alertMsg){
-      setTimeout(function(){ alert(ev.alertMsg); }, 400);
+      try{ showToast(ev.alertMsg); }
+      catch(e){ /* never let a notification failure affect the saved event */ }
     }
   });
 
@@ -1229,6 +1252,19 @@
   /* ============================================================
      16. UTIL
   ============================================================ */
+  // Non-blocking replacement for window.alert() — used for event reminder
+  // pop-ups so a saved event never freezes or blocks the interface thread.
+  function showToast(msg){
+    try{
+      var host = document.getElementById("toastHost");
+      var el = document.createElement("div");
+      el.className = "toast";
+      el.textContent = msg;
+      host.appendChild(el);
+      setTimeout(function(){ if(el && el.parentNode){ el.parentNode.removeChild(el); } }, 3600);
+    }catch(e){ /* toast rendering failed — never let this break the app */ }
+  }
+
   function escapeHtml(s){
     return String(s).replace(/[&<>"']/g, function(c){
       return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c];
