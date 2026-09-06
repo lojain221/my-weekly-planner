@@ -235,7 +235,9 @@
   .swatches{display:flex;gap:12px;margin:10px 0 6px;}
   .swatch{width:36px;height:36px;border-radius:50%;border:3px solid transparent;}
   .swatch.selected{border-color:#fff;}
-  .toggle-row{display:flex;align-items:center;justify-content:space-between;padding:10px 0;}
+  .toggle-row{display:flex;align-items:center;justify-content:space-between;padding:10px 0;gap:14px;}
+  .slide-section{max-height:0;overflow:hidden;opacity:0;transition:max-height .32s ease, opacity .28s ease, margin-top .32s ease;}
+  .slide-section.open{max-height:220px;opacity:1;margin-top:4px;}
   .switch{width:46px;height:26px;border-radius:20px;background:var(--card);position:relative;border:1px solid var(--stroke);}
   .switch .knob{width:20px;height:20px;border-radius:50%;background:var(--text-faint);position:absolute;top:2px;left:2px;transition:.2s;}
   .switch.on{background:var(--purple);}
@@ -244,15 +246,56 @@
   .btn-ghost{flex:1;padding:14px;border-radius:14px;background:var(--card);border:1px solid var(--stroke);color:var(--text);font-weight:700;}
   .btn-solid{flex:1;padding:14px;border-radius:14px;background:linear-gradient(135deg,var(--purple),#8f6ae8);border:none;color:#fff;font-weight:700;}
 
-  /* ---------- Themes ---------- */
-  body.theme-birthday{background:radial-gradient(1200px 800px at 20% -10%, #4a1f57 0%, #2c1140 55%) fixed;}
+  /* ---------- Light mode ----------
+     Placed BEFORE the holiday/birthday theme rules below on purpose:
+     body.theme-birthday / body.theme-islamic use the exact same
+     specificity (one class each), so whichever rule appears LAST in
+     the stylesheet wins when both classes are on <body> at once. Holiday
+     skins are meant to fully take over for their one special day, so
+     they're kept after this block and re-assert their own readable
+     text/card variables — see the "Themes" section for why. */
+  body.light-mode{
+    --bg-deep:#eef3ff;
+    --bg-deep-2:#e3ebfb;
+    --card:#ffffff;
+    --card-soft:#f3f6ff;
+    --card-hi:#e8edfc;
+    --stroke:rgba(20,30,70,0.10);
+    --yellow:#f5b400;
+    --orange:#ff7a1a;
+    --pink:#ff3f81;
+    --purple:#8b4dff;
+    --text:#0c1a45;
+    --text-dim:#405089;
+    --text-faint:#6b7aad;
+    --shadow-deep:0 10px 26px rgba(30,45,90,0.12);
+    background:radial-gradient(1200px 800px at 20% -10%, #f7faff 0%, #eef3ff 55%) fixed;
+  }
+  body.light-mode header{background:linear-gradient(180deg, #eef3ff 70%, rgba(238,243,255,0));}
+  body.light-mode .modal-backdrop{background:rgba(150,165,210,0.45);}
+  body.light-mode #loginScreen{background:transparent;}
+
+  /* ---------- Themes ----------
+     Holiday skins are a full visual takeover for one special day/period,
+     independent of the user's light/dark preference — they re-assert
+     their own text/card variables (not just background) so nothing goes
+     illegible if a light-mode account happens to have a birthday today. */
+  body.theme-birthday{
+    background:radial-gradient(1200px 800px at 20% -10%, #4a1f57 0%, #2c1140 55%) fixed;
+    --card:#3a1a52; --card-soft:#452163; --card-hi:#54297a; --stroke:rgba(255,215,140,0.16);
+    --text:#fdf3ff; --text-dim:#dcc3e8; --text-faint:#b799c8;
+  }
   body.theme-birthday .card{border-color:rgba(255,215,140,0.25);}
   body.theme-birthday header{background:linear-gradient(180deg, #2c1140 70%, rgba(44,17,64,0));}
   .bday-banner{
     background:linear-gradient(135deg, var(--pink), var(--yellow));color:#2a0f00;text-align:center;
     padding:12px 16px;border-radius:16px;font-family:var(--font-head);font-weight:800;font-size:15px;margin-bottom:14px;
   }
-  body.theme-islamic{background:radial-gradient(1200px 800px at 20% -10%, #241a52 0%, #150f34 55%) fixed;}
+  body.theme-islamic{
+    background:radial-gradient(1200px 800px at 20% -10%, #241a52 0%, #150f34 55%) fixed;
+    --card:#1e1648; --card-soft:#261c58; --card-hi:#302469; --stroke:rgba(255,215,140,0.14);
+    --text:#f4f1ff; --text-dim:#c7c0e8; --text-faint:#9d94c9;
+  }
   .islamic-banner{
     background:linear-gradient(135deg, #2a1f5e, #6b4fc9);border:1px solid rgba(255,215,140,0.4);
     color:var(--yellow);text-align:center;padding:12px 16px;border-radius:16px;font-weight:700;font-size:14.5px;margin-bottom:14px;
@@ -312,6 +355,7 @@
     <header>
       <div class="header-title"><span class="dot"></span><span id="headerTitleText" data-i18n="appName">Nightbloom</span></div>
       <div class="header-actions">
+        <button class="icon-btn" id="themeToggle" title="Toggle light / dark mode">🌙</button>
         <button class="icon-btn" id="langToggle">EN</button>
         <button class="icon-btn" id="logoutBtn" title="Sign out">⎋</button>
       </div>
@@ -327,6 +371,7 @@
           <div class="section-title" data-i18n="yourProfile">Your profile</div>
           <p class="muted" id="profileUserLine"></p>
           <p class="muted" id="profileBdayLine"></p>
+          <button class="fab" id="editBirthdayBtn" data-i18n="editBirthday">Edit birthday</button>
         </div>
         <div class="card">
           <div class="section-title" data-i18n="quickStats">Today at a glance</div>
@@ -417,17 +462,18 @@
   </div>
 </div>
 
-<!-- ===================== Birthday setup modal ===================== -->
+<!-- ===================== Birthday setup / edit modal ===================== -->
 <div class="modal-backdrop hidden" id="birthdayModal">
   <div class="modal-sheet">
     <div class="modal-handle"></div>
-    <div class="modal-title" data-i18n="welcomeTitle">Welcome! One quick thing</div>
-    <p class="muted" data-i18n="welcomeSub">Tell us your birth date so we can celebrate it with you.</p>
+    <div class="modal-title" id="birthdayModalTitle" data-i18n="welcomeTitle">Welcome! One quick thing</div>
+    <p class="muted" id="birthdayModalSub" data-i18n="welcomeSub">Tell us your birth date so we can celebrate it with you.</p>
     <div class="field" style="margin-top:14px;">
       <label data-i18n="birthDate">Birth date</label>
       <input id="birthdayInput" type="date">
     </div>
     <div class="modal-actions">
+      <button class="btn-ghost hidden" id="cancelBirthdayBtn" data-i18n="cancel">Cancel</button>
       <button class="btn-solid" id="saveBirthdayBtn" data-i18n="save">Save</button>
     </div>
   </div>
@@ -456,8 +502,15 @@
       <input id="eventAlertInput" type="text">
     </div>
     <div class="toggle-row">
-      <span data-i18n="notifyToggle">Remind me (local notification)</span>
+      <span data-i18n="notifyToggle">Do you want a reminder notification for this event?</span>
       <div class="switch" id="notifySwitch"><div class="knob"></div></div>
+    </div>
+    <div class="slide-section" id="reminderSlide">
+      <div class="field">
+        <label data-i18n="reminderTimeLabel">Reminder date &amp; time</label>
+        <input id="reminderDateTimeInput" type="datetime-local">
+      </div>
+      <p class="muted" id="notifPermNote"></p>
     </div>
     <div class="modal-actions">
       <button class="btn-ghost" id="cancelEventBtn" data-i18n="cancel">Cancel</button>
@@ -505,8 +558,10 @@
       monthlyRewards:"Monthly rewards", viewRewards:"🏆 View monthly rewards",
       navProfile:"Profile", navWeek:"Week", navMonth:"Month", navHabits:"Habits", navReports:"Reports",
       welcomeTitle:"Welcome! One quick thing", welcomeSub:"Tell us your birth date so we can celebrate it with you.",
+      editBirthday:"✏️ Edit birthday", editBirthdayTitle:"Update your birth date",
+      editBirthdaySub:"This replaces your saved birth date, so the birthday theme fires on the right day.",
       birthDate:"Birth date", save:"Save", newEvent:"New event", eventTitle:"Title", colorTag:"Color tag",
-      alertMsg:"Custom pop-up alert message", notifyToggle:"Remind me (local notification)", cancel:"Cancel",
+      alertMsg:"Custom pop-up alert message", notifyToggle:"Do you want a reminder notification for this event?", cancel:"Cancel",
       niceClose:"Nice!", tasksDone:"Tasks done", habitsDone:"Habits done", eventsToday:"Events today",
       streak:"Day streak", noRoutine:"No routine tasks yet — add one below.",
       noDynamic:"Nothing extra planned for this day.", noHabits:"No habits yet — add your first one below.",
@@ -515,7 +570,12 @@
       seedMedal:"Seed — just getting started", happyBirthday:"🎉 Happy Birthday! Enjoy your day 🎉",
       ramadanBanner:"🌙 Ramadan Kareem — blessed month ahead", eidFitrBanner:"✨ Eid al-Fitr Mubarak! ✨",
       eidAdhaBanner:"✨ Eid al-Adha Mubarak! ✨", weekMon:"Mon", weekTue:"Tue", weekWed:"Wed", weekThu:"Thu",
-      weekFri:"Fri", weekSat:"Sat", weekSun:"Sun", dayCompleteMsg:"All done for today — nice work!"
+      weekFri:"Fri", weekSat:"Sat", weekSun:"Sun", dayCompleteMsg:"All done for today — nice work!",
+      reminderTimeLabel:"Reminder date & time", pickReminderTime:"Pick a reminder date & time first.",
+      notifUnsupported:"This browser can't show system notifications — you'll get an in-app alert instead.",
+      notifGranted:"Notifications allowed — you'll get a real phone/system alert.",
+      notifDenied:"Notifications are blocked in this browser — you'll get an in-app alert instead.",
+      notifWillAsk:"We'll ask permission for system notifications when you save."
     },
     ar:{
       brandLine:"نايت<span>بلوم</span>", brandSub:"أسبوعك، عاداتك، إيقاعك الخاص.",
@@ -529,8 +589,10 @@
       monthlyRewards:"مكافآت الشهر", viewRewards:"🏆 عرض مكافآت الشهر",
       navProfile:"الملف", navWeek:"الأسبوع", navMonth:"الشهر", navHabits:"العادات", navReports:"التقارير",
       welcomeTitle:"مرحبًا! أمر سريع", welcomeSub:"أخبرنا بتاريخ ميلادك لنحتفل به معك.",
+      editBirthday:"✏️ تعديل تاريخ الميلاد", editBirthdayTitle:"تحديث تاريخ ميلادك",
+      editBirthdaySub:"سيستبدل هذا تاريخ ميلادك المحفوظ، حتى يظهر طابع عيد الميلاد في اليوم الصحيح.",
       birthDate:"تاريخ الميلاد", save:"حفظ", newEvent:"حدث جديد", eventTitle:"العنوان", colorTag:"لون التصنيف",
-      alertMsg:"رسالة تنبيه مخصصة", notifyToggle:"ذكّرني (إشعار محلي)", cancel:"إلغاء",
+      alertMsg:"رسالة تنبيه مخصصة", notifyToggle:"هل تريد إشعار تذكير لهذا الحدث؟", cancel:"إلغاء",
       niceClose:"رائع!", tasksDone:"المهام المنجزة", habitsDone:"العادات المنجزة", eventsToday:"أحداث اليوم",
       streak:"أيام متتالية", noRoutine:"لا توجد مهام روتينية بعد — أضف واحدة أدناه.",
       noDynamic:"لا يوجد شيء إضافي لهذا اليوم.", noHabits:"لا توجد عادات بعد — أضف أول عادة أدناه.",
@@ -539,7 +601,12 @@
       seedMedal:"بداية — لا تزال في البداية", happyBirthday:"🎉 عيد ميلاد سعيد! استمتع بيومك 🎉",
       ramadanBanner:"🌙 رمضان كريم — شهر مبارك", eidFitrBanner:"✨ عيد فطر مبارك! ✨",
       eidAdhaBanner:"✨ عيد أضحى مبارك! ✨", weekMon:"إثنين", weekTue:"ثلاثاء", weekWed:"أربعاء", weekThu:"خميس",
-      weekFri:"جمعة", weekSat:"سبت", weekSun:"أحد", dayCompleteMsg:"انتهيت من كل شيء اليوم — عمل رائع!"
+      weekFri:"جمعة", weekSat:"سبت", weekSun:"أحد", dayCompleteMsg:"انتهيت من كل شيء اليوم — عمل رائع!",
+      reminderTimeLabel:"تاريخ ووقت التذكير", pickReminderTime:"اختر تاريخ ووقت التذكير أولاً.",
+      notifUnsupported:"هذا المتصفح لا يدعم إشعارات النظام — ستحصل على تنبيه داخل التطبيق بدلاً من ذلك.",
+      notifGranted:"الإشعارات مفعّلة — ستحصل على تنبيه حقيقي على جهازك.",
+      notifDenied:"الإشعارات محظورة في هذا المتصفح — ستحصل على تنبيه داخل التطبيق بدلاً من ذلك.",
+      notifWillAsk:"سنطلب إذن الإشعارات عند الحفظ."
     }
   };
 
@@ -680,7 +747,117 @@
   function stopAmbientConfetti(){ if(ambientConfettiTimer){ clearInterval(ambientConfettiTimer); ambientConfettiTimer=null; } }
 
   /* ============================================================
-     7. LOGIN FLOW
+     7. NOTIFICATIONS & REMINDERS (Notification API + best-effort Service Worker)
+
+     Honest scope of what this can and cannot do, verified directly rather
+     than assumed:
+     - A Service Worker's script MUST be a real same-origin http(s) file
+       fetched over the network — every major browser rejects registering
+       one from an inline blob: URL, and file:// pages can't register a
+       Service Worker at all (no network origin to scope it to). That
+       means a single, self-contained HTML file — opened directly or
+       served as one flat page — cannot use a genuine Service Worker.
+       The attempt below is kept in because it's harmless and forward
+       compatible (it will start working for free if this file is ever
+       split so its Service Worker is a real hosted .js file instead of
+       a blob), but expect it to silently no-op today.
+     - What DOES work from a single file: the direct Notification API.
+       When permission is granted, `new Notification(...)` produces a
+       real OS-level notification from an open tab — including while
+       that tab is in the background or a different app/window is
+       focused — as long as the browser process itself is still running.
+       It will NOT fire if the tab or browser has been fully closed, and
+       Android Chrome specifically disallows the direct constructor
+       (it requires a Service Worker), so this falls back to an in-app
+       card there. iOS Safari only supports push at all for a site added
+       to the Home Screen, which is out of reach for a static file with
+       no backend push server.
+     - Whenever the real OS notification path isn't available (denied,
+       unsupported, or the Android/iOS restrictions above), reminders
+       still fire as an in-app visual card so nothing is silently lost —
+       it just won't wake the phone if you're not looking at the app.
+  ============================================================ */
+  var swRegistration = null;
+  function registerReminderServiceWorker(){
+    if(!("serviceWorker" in navigator)) return;
+    try{
+      var swSource = "self.addEventListener('message', function(e){ var d = e.data || {}; if(d.type === 'show-reminder'){ self.registration.showNotification(d.title, { body: d.body, tag: d.tag }); } });";
+      var blob = new Blob([swSource], {type:"application/javascript"});
+      var swUrl = URL.createObjectURL(blob);
+      navigator.serviceWorker.register(swUrl).then(function(reg){
+        swRegistration = reg;
+      }).catch(function(e){
+        // Expected on file:// pages and on any browser that (correctly)
+        // refuses a blob: script URL — see the note above. Reminders
+        // still work via the Notification API fallback in fireNotification().
+      });
+    }catch(e){ /* Service Worker unsupported in this browser — fallback path handles reminders. */ }
+  }
+
+  function updateNotifPermNote(){
+    var note = document.getElementById("notifPermNote");
+    if(!note) return;
+    if(!("Notification" in window)){ note.textContent = tr("notifUnsupported"); return; }
+    if(Notification.permission === "granted"){ note.textContent = tr("notifGranted"); }
+    else if(Notification.permission === "denied"){ note.textContent = tr("notifDenied"); }
+    else{ note.textContent = tr("notifWillAsk"); }
+  }
+
+  // Fire-and-forget: never blocks the save, whatever the browser answers.
+  function requestNotificationPermission(){
+    if(!("Notification" in window)) return;
+    if(Notification.permission !== "default") return;
+    try{
+      var maybePromise = Notification.requestPermission(function(result){ updateNotifPermNote(); });
+      if(maybePromise && typeof maybePromise.then === "function"){
+        maybePromise.then(function(){ updateNotifPermNote(); }).catch(function(){ /* ignore */ });
+      }
+    }catch(e){ /* Notification API blocked or unsupported — reminders still fall back to in-app cards. */ }
+  }
+
+  function fireNotification(ev){
+    var title = ev.title;
+    var body = ev.alertMsg || "";
+    if(("Notification" in window) && Notification.permission === "granted"){
+      if(swRegistration && swRegistration.showNotification){
+        try{ swRegistration.showNotification(title, {body:body, tag:ev.id}); return; }
+        catch(e){ /* fall through to the direct constructor below */ }
+      }
+      try{ new Notification(title, {body:body, tag:ev.id}); return; }
+      catch(e){ /* Android Chrome requires a Service Worker for this — fall through to the in-app card */ }
+    }
+    // Denied / unsupported / platform-restricted — still surface the reminder visually.
+    showCelebrationCard(title + (body ? " — " + body : ""), false);
+  }
+
+  function checkReminders(){
+    if(!state.user) return;
+    var events = load("events", {});
+    var now = Date.now();
+    var changed = false;
+    Object.keys(events).forEach(function(dateKey){
+      events[dateKey].forEach(function(ev){
+        if(ev.notify && ev.reminderAt && !ev.fired && ev.reminderAt <= now){
+          fireNotification(ev);
+          ev.fired = true;
+          changed = true;
+        }
+      });
+    });
+    if(changed){
+      save("events", events);
+      if(state.view === "month"){ try{ renderMonth(); }catch(e){ /* never let a re-render error affect saved data */ } }
+    }
+  }
+  // Required cadence: check every 30 seconds while the app is open.
+  setInterval(checkReminders, 30000);
+  // Also catch up immediately whenever the tab/app regains focus, since a
+  // backgrounded tab's timers can be throttled by the browser in the meantime.
+  document.addEventListener("visibilitychange", function(){ if(!document.hidden){ checkReminders(); } });
+  window.addEventListener("focus", checkReminders);
+
+  /* ============================================================
+     8. LOGIN FLOW
   ============================================================ */
   var loginScreen = document.getElementById("loginScreen");
   var mainApp = document.getElementById("mainApp");
@@ -708,31 +885,85 @@
     loginScreen.classList.remove("hidden");
     document.getElementById("loginUser").value="";
     document.getElementById("loginPass").value="";
+    // The login screen has its own fixed dark aesthetic and isn't theme-aware
+    // (theme is a per-account preference, meaningless before anyone's logged
+    // in) — so always reset to it here rather than leaving a previous
+    // account's light-mode choice bleeding into the next person's login.
+    document.body.classList.remove("light-mode");
   });
 
   function enterApp(){
     var profile = load("profile", null);
     if(!profile){
+      isEditingBirthday = false;
+      document.getElementById("birthdayModalTitle").textContent = tr("welcomeTitle");
+      document.getElementById("birthdayModalSub").textContent = tr("welcomeSub");
+      document.getElementById("cancelBirthdayBtn").classList.add("hidden");
+      document.getElementById("birthdayInput").value = "";
       document.getElementById("birthdayModal").classList.remove("hidden");
     } else {
       showMainApp();
     }
   }
 
+  var isEditingBirthday = false;
+
+  document.getElementById("editBirthdayBtn").addEventListener("click", function(){
+    var profile = load("profile", {});
+    isEditingBirthday = true;
+    document.getElementById("birthdayInput").value = profile.birthDate || "";
+    document.getElementById("birthdayModalTitle").textContent = tr("editBirthdayTitle");
+    document.getElementById("birthdayModalSub").textContent = tr("editBirthdaySub");
+    document.getElementById("cancelBirthdayBtn").classList.remove("hidden");
+    document.getElementById("birthdayModal").classList.remove("hidden");
+  });
+  document.getElementById("cancelBirthdayBtn").addEventListener("click", function(){
+    document.getElementById("birthdayModal").classList.add("hidden");
+    isEditingBirthday = false;
+  });
+
   document.getElementById("saveBirthdayBtn").addEventListener("click", function(){
     var val = document.getElementById("birthdayInput").value;
     if(!val) return;
+    // Overwrites the existing profile record outright for this specific
+    // username — same skey()-scoped save() used everywhere else, so it
+    // can never touch another account's data, and every other piece of
+    // this user's stored data (tasks, events, habits, theme, etc.) is
+    // left completely untouched.
     save("profile", { birthDate: val });
     document.getElementById("birthdayModal").classList.add("hidden");
-    showMainApp();
+    if(isEditingBirthday){
+      isEditingBirthday = false;
+      // Re-run the birthday/holiday check immediately so a corrected date
+      // reflects right away, without forcing the user back to another view.
+      applyThemeOverrides();
+      renderProfile();
+    } else {
+      showMainApp();
+    }
+  });
+
+  /* ---- Light / dark theme toggle (per-account preference) ---- */
+  function applyThemeMode(mode){
+    document.body.classList.toggle("light-mode", mode === "light");
+    var btn = document.getElementById("themeToggle");
+    if(btn){ btn.textContent = mode === "light" ? "☀️" : "🌙"; }
+  }
+  document.getElementById("themeToggle").addEventListener("click", function(){
+    var next = load("themeMode", "dark") === "dark" ? "light" : "dark";
+    save("themeMode", next);
+    applyThemeMode(next);
   });
 
   function showMainApp(){
     loginScreen.classList.add("hidden");
     mainApp.classList.remove("hidden");
+    applyThemeMode(load("themeMode", "dark"));
     applyThemeOverrides();
     setView("profile");
     renderAll();
+    updateNotifPermNote();
+    checkReminders(); // catch anything already due the moment this account's app opens
   }
 
   /* Note: session auto-resume is triggered at the very end of this script,
@@ -742,12 +973,13 @@
      like it had vanished, even though localStorage was untouched. */
 
   /* ============================================================
-     8. LANGUAGE
+     9. LANGUAGE
   ============================================================ */
   function applyLanguage(){
     document.documentElement.lang = state.lang;
     document.documentElement.dir = state.lang==="ar" ? "rtl" : "ltr";
     document.getElementById("langToggle").textContent = state.lang==="ar" ? "AR" : "EN";
+    document.getElementById("themeToggle").title = state.lang==="ar" ? "تبديل الوضع الفاتح/الداكن" : "Toggle light / dark mode";
     document.querySelectorAll("[data-i18n]").forEach(function(el){
       var key = el.getAttribute("data-i18n");
       el.innerHTML = tr(key);
@@ -764,7 +996,7 @@
   });
 
   /* ============================================================
-     9. NAVIGATION
+     10. NAVIGATION
   ============================================================ */
   document.querySelectorAll(".nav-btn").forEach(function(btn){
     btn.addEventListener("click", function(){ setView(btn.getAttribute("data-view")); });
@@ -780,7 +1012,7 @@
   }
 
   /* ============================================================
-     10. THEME OVERRIDES (birthday / islamic holiday)
+     11. THEME OVERRIDES (birthday / islamic holiday)
   ============================================================ */
   function applyThemeOverrides(){
     var profile = load("profile", null);
@@ -806,7 +1038,7 @@
   }
 
   /* ============================================================
-     11. RENDER: PROFILE VIEW
+     12. RENDER: PROFILE VIEW
   ============================================================ */
   function renderProfile(){
     var profile = load("profile", {});
@@ -829,7 +1061,7 @@
   }
 
   /* ============================================================
-     12. RENDER: WEEK VIEW
+     13. RENDER: WEEK VIEW
   ============================================================ */
   var WEEK_KEYS = ["weekMon","weekTue","weekWed","weekThu","weekFri","weekSat","weekSun"];
 
@@ -935,7 +1167,7 @@
   }
 
   /* ============================================================
-     13. RENDER: MONTH VIEW
+     14. RENDER: MONTH VIEW
   ============================================================ */
   var MONTH_NAMES_EN = ["January","February","March","April","May","June","July","August","September","October","November","December"];
   var MONTH_NAMES_AR = ["يناير","فبراير","مارس","أبريل","مايو","يونيو","يوليو","أغسطس","سبتمبر","أكتوبر","نوفمبر","ديسمبر"];
@@ -997,8 +1229,14 @@
     if(dayEvents.length===0){ list.innerHTML = '<p class="muted">'+tr("noEvents")+'</p>'; }
     dayEvents.forEach(function(ev){
       var chip = document.createElement("div"); chip.className="event-chip";
+      var reminderLabel = "";
+      if(ev.notify && ev.reminderAt){
+        var rd = new Date(ev.reminderAt);
+        var stamp = rd.toLocaleString(state.lang==="ar"?"ar":"en", {month:"short", day:"numeric", hour:"numeric", minute:"2-digit"});
+        reminderLabel = " · 🔔 " + stamp + (ev.fired ? " ✓" : "");
+      }
       chip.innerHTML = '<div class="bar tag-'+ev.color+'"></div>'+
-        '<div class="info"><b>'+escapeHtml(ev.title)+'</b><span>'+(ev.alertMsg?escapeHtml(ev.alertMsg):"")+(ev.notify?" · 🔔":"")+'</span></div>'+
+        '<div class="info"><b>'+escapeHtml(ev.title)+'</b><span>'+(ev.alertMsg?escapeHtml(ev.alertMsg):"")+escapeHtml(reminderLabel)+'</span></div>'+
         '<button class="del-btn" data-del="1">✕</button>';
       chip.querySelector("[data-del]").addEventListener("click", function(){
         var ev2 = load("events", {});
@@ -1017,6 +1255,9 @@
     document.getElementById("eventTitleInput").value = "";
     document.getElementById("eventAlertInput").value = "";
     document.getElementById("notifySwitch").classList.remove("on");
+    document.getElementById("reminderSlide").classList.remove("open");
+    document.getElementById("reminderDateTimeInput").value = "";
+    updateNotifPermNote();
     document.querySelectorAll(".swatch").forEach(function(s){s.classList.remove("selected");});
     document.querySelector('.swatch[data-color="yellow"]').classList.add("selected");
     selectedEventColor = "yellow";
@@ -1029,18 +1270,34 @@
       selectedEventColor = sw.getAttribute("data-color");
     });
   });
-  document.getElementById("notifySwitch").addEventListener("click", function(){ this.classList.toggle("on"); });
+  document.getElementById("notifySwitch").addEventListener("click", function(){
+    var isOn = this.classList.toggle("on");
+    // Slide the reminder date/time section open only when the answer is "yes".
+    document.getElementById("reminderSlide").classList.toggle("open", isOn);
+    if(isOn){ updateNotifPermNote(); }
+  });
   document.getElementById("cancelEventBtn").addEventListener("click", function(){ eventModal.classList.add("hidden"); });
   document.getElementById("saveEventBtn").addEventListener("click", function(){
     var title = document.getElementById("eventTitleInput").value.trim();
     if(!title) return;
+    var notify = document.getElementById("notifySwitch").classList.contains("on");
+    var reminderAt = null;
+    if(notify){
+      var rawVal = document.getElementById("reminderDateTimeInput").value;
+      var parsedMs = rawVal ? new Date(rawVal).getTime() : NaN;
+      if(!rawVal || isNaN(parsedMs)){
+        showToast(tr("pickReminderTime"));
+        return; // stop here — nothing is saved until a valid reminder time is chosen
+      }
+      reminderAt = parsedMs;
+    }
     var ev = {
       id: uid(), title: title, color: selectedEventColor,
       alertMsg: document.getElementById("eventAlertInput").value.trim(),
-      notify: document.getElementById("notifySwitch").classList.contains("on")
+      notify: notify, reminderAt: reminderAt, fired: false
     };
     // Persist first and always close the modal — the save itself must never
-    // be blocked or rolled back by a rendering or notification problem below.
+    // be blocked or rolled back by a permission prompt or rendering problem below.
     var events = load("events", {});
     events[state.selectedCalDay] = events[state.selectedCalDay] || [];
     events[state.selectedCalDay].push(ev);
@@ -1053,16 +1310,20 @@
     try{ renderMonth(); }
     catch(e){ console.error("renderMonth failed after saving event:", e); }
 
-    // Reminder pop-up: non-blocking toast instead of window.alert(), and
-    // wrapped so a notification failure can never lock up the screen.
-    if(ev.notify && ev.alertMsg){
-      try{ showToast(ev.alertMsg); }
-      catch(e){ /* never let a notification failure affect the saved event */ }
+    if(notify){
+      // Ask for permission now, as requested — but fire-and-forget: the
+      // event and its reminder timestamp are already safely saved above,
+      // so however the browser answers (or if it never answers), nothing
+      // about the save itself is affected.
+      requestNotificationPermission();
+      // Catch the case where the chosen time is already in the past by
+      // the time it's saved (e.g. picked a moment that just elapsed).
+      checkReminders();
     }
   });
 
   /* ============================================================
-     14. RENDER: HABITS VIEW
+     15. RENDER: HABITS VIEW
   ============================================================ */
   function renderHabits(){
     var habits = load("habits", []); // [{id,name,color}]
@@ -1117,7 +1378,7 @@
   }
 
   /* ============================================================
-     15. DAILY STATS / REPORTS
+     16. DAILY STATS / REPORTS
   ============================================================ */
   function computeDailyStats(dateKey){
     var routine = load("routineTasks", []);
@@ -1204,7 +1465,7 @@
   document.getElementById("closeRewardBtn").addEventListener("click", function(){ rewardModal.classList.add("hidden"); });
 
   /* ============================================================
-     16. UTIL
+     17. UTIL
   ============================================================ */
   // Non-blocking replacement for window.alert() — used for event reminder
   // pop-ups so a saved event never freezes or blocks the interface thread.
@@ -1226,7 +1487,7 @@
   }
 
   /* ============================================================
-     17. MASTER RENDER
+     18. MASTER RENDER
   ============================================================ */
   function renderAll(){
     if(!state.user) return;
@@ -1242,6 +1503,7 @@
   }
 
   applyLanguage();
+  registerReminderServiceWorker(); // best-effort; see the honest scope note in section 7 above
 
   /* Auto-resume a previous session. This runs last, on purpose: every
      module-level constant used by the render functions it can trigger
