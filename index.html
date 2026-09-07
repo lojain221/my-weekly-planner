@@ -1,7 +1,6 @@
 <!DOCTYPE html>
 <html lang="en" dir="ltr">
 <head>
-  <!-- App Icons Configurations -->
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
@@ -171,7 +170,13 @@
   .tag-dot{width:9px;height:9px;border-radius:50%;flex:none;}
   .tag-yellow{background:var(--yellow);} .tag-orange{background:var(--orange);}
   .tag-pink{background:var(--pink);} .tag-purple{background:var(--purple);}
-  .del-btn{background:none;border:none;color:var(--text-faint);font-size:16px;padding:2px 4px;}
+  .del-btn{background:none;border:none;color:var(--text-faint);font-size:16px;padding:8px;min-width:36px;min-height:36px;border-radius:8px;flex:none;}
+  .edit-btn{background:none;border:none;color:var(--text-dim);font-size:15px;padding:8px;min-width:36px;min-height:36px;border-radius:8px;flex:none;}
+  .del-btn:active, .edit-btn:active{background:var(--bg-deep-2);}
+  .task-text-input{
+    flex:1;font-size:14.5px;padding:7px 10px;border-radius:8px;border:1px solid var(--purple);
+    background:var(--bg-deep-2);color:var(--text);outline:none;min-width:0;
+  }
 
   .add-row{display:flex;gap:8px;margin-top:12px;}
   .add-row input{
@@ -223,8 +228,13 @@
     display:flex;align-items:center;justify-content:center;font-size:16px;color:transparent;
   }
   .ring-btn.done{color:#fff;}
-  .habit-name{flex:1;font-size:14.5px;font-weight:600;}
-  .habit-streak{font-size:11.5px;color:var(--text-dim);}
+  .habit-name-col{flex:1;min-width:0;}
+  .habit-name{font-size:14.5px;font-weight:600;}
+  .habit-timeframe-badge{
+    display:inline-block;margin-top:4px;padding:3px 9px;border-radius:20px;font-size:10.5px;font-weight:700;
+    color:#1a1500;
+  }
+  .habit-streak{font-size:11.5px;color:var(--text-dim);flex:none;}
 
   /* ---------- Reports view ---------- */
   .progress-ring-wrap{display:flex;flex-direction:column;align-items:center;padding:10px 0 4px;}
@@ -264,6 +274,7 @@
   .modal-actions{display:flex;gap:10px;margin-top:20px;}
   .btn-ghost{flex:1;padding:14px;border-radius:14px;background:var(--card);border:1px solid var(--stroke);color:var(--text);font-weight:700;}
   .btn-solid{flex:1;padding:14px;border-radius:14px;background:linear-gradient(135deg,var(--purple),#8f6ae8);border:none;color:#fff;font-weight:700;}
+  .btn-danger{width:100%;padding:13px;border-radius:14px;background:transparent;border:1.5px solid var(--pink);color:var(--pink);font-weight:700;margin-top:16px;}
 
   /* ---------- Light mode ----------
      Placed BEFORE the holiday/birthday theme rules below on purpose:
@@ -497,10 +508,7 @@
         <div class="card">
           <div class="section-title" data-i18n="habitDeck">Habit deck</div>
           <div id="habitList"></div>
-          <div class="add-row">
-            <input id="habitInput" type="text" data-i18n-ph="addHabitPh" placeholder="Add a new habit...">
-            <button id="habitAddBtn">+</button>
-          </div>
+          <button class="fab" id="addHabitBtn" data-i18n="addHabitModalTitle">Add habit</button>
         </div>
       </section>
 
@@ -555,7 +563,7 @@
 <div class="modal-backdrop hidden" id="eventModal">
   <div class="modal-sheet">
     <div class="modal-handle"></div>
-    <div class="modal-title" data-i18n="newEvent">New event</div>
+    <div class="modal-title" id="eventModalTitle" data-i18n="newEvent">New event</div>
     <div class="field">
       <label data-i18n="eventTitle">Title</label>
       <input id="eventTitleInput" type="text">
@@ -588,6 +596,7 @@
       <button class="btn-ghost" id="cancelEventBtn" data-i18n="cancel">Cancel</button>
       <button class="btn-solid" id="saveEventBtn" data-i18n="save">Save</button>
     </div>
+    <button class="btn-danger hidden" id="deleteEventBtn" data-i18n="deleteEvent">Delete event</button>
   </div>
 </div>
 
@@ -601,6 +610,27 @@
     <div class="modal-actions">
       <button class="btn-solid" id="closeRewardBtn" data-i18n="niceClose">Nice!</button>
     </div>
+  </div>
+</div>
+
+<!-- ===================== Add / Edit habit modal ===================== -->
+<div class="modal-backdrop hidden" id="habitModal">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title" id="habitModalTitle" data-i18n="addHabitModalTitle">Add habit</div>
+    <div class="field">
+      <label data-i18n="habitName">Habit name</label>
+      <input id="habitNameInput" type="text">
+    </div>
+    <div class="field">
+      <label data-i18n="habitTimeframe">Time frame (optional)</label>
+      <input id="habitTimeframeInput" type="text" data-i18n-ph="habitTimeframePh" placeholder="e.g. 8:00 AM - 9:00 AM, or Evening">
+    </div>
+    <div class="modal-actions">
+      <button class="btn-ghost" id="cancelHabitBtn" data-i18n="cancel">Cancel</button>
+      <button class="btn-solid" id="saveHabitBtn" data-i18n="save">Save</button>
+    </div>
+    <button class="btn-danger hidden" id="deleteHabitBtn" data-i18n="deleteHabit">Delete habit</button>
   </div>
 </div>
 
@@ -619,7 +649,7 @@
      an external service under your own Google account and can't be
      provisioned from inside this file.
   ============================================================ */
-  const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyyLilmREbeK7lgcsfV3DI7ryee_w2dbvT5F9HPXfGFwllV5OyeRxY_0hrFF-qv0KOJ4w/exec";
+  const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxj_lFo_95gsdmAXh3SmG_rJQakSzrvdp9zrULTAjNhI1GGZLDjFFelELRy34TDNsAlqg/exec";
 
   /* ============================================================
      0.5 CLOUD SYNC — thin client for the Apps Script contract above.
@@ -645,7 +675,7 @@
   // this feature is scoped to. Deliberately excludes device-local
   // preferences like themeMode, which have no cross-device sync
   // requirement here.
-  var SYNCABLE_FIELDS = { profile:1, routineTasks:1, dynamicTasks:1, habits:1, habitLog:1, events:1 };
+  var SYNCABLE_FIELDS = { profile:1, routineTasks:1, dynamicTasks:1, habits:1, habitLog:1, events:1, lastOpenedTimestamp:1 };
 
   function findUserPassword(username){
     var acc = USERS.find(function(a){ return a.u === username; });
@@ -721,6 +751,10 @@
       niceClose:"Nice!", tasksDone:"Tasks done", habitsDone:"Habits done", eventsToday:"Events today",
       streak:"Day streak", noRoutine:"No routine tasks yet — add one below.",
       noDynamic:"Nothing extra planned for this day.", noHabits:"No habits yet — add your first one below.",
+      editTask:"Edit task", deleteTask:"Delete task", editHabit:"Edit habit", deleteHabit:"Delete habit",
+      editEvent:"Edit event", deleteEvent:"Delete event", habitTimeframe:"Time frame (optional)",
+      habitTimeframePh:"e.g. 8:00 AM - 9:00 AM, or Evening", habitName:"Habit name", addHabitModalTitle:"Add habit",
+      inactivityNudge:"Don't forget your planner! You have pending tasks and habits waiting for you today.",
       noEvents:"No events on this day.", pctComplete:" complete", of:" of ", monthAvg:"Monthly average completion: ",
       goldMedal:"Gold — outstanding month", silverMedal:"Silver — great consistency", bronzeMedal:"Bronze — keep building",
       seedMedal:"Seed — just getting started", happyBirthday:"🎉 Happy Birthday! Enjoy your day 🎉",
@@ -754,6 +788,10 @@
       niceClose:"رائع!", tasksDone:"المهام المنجزة", habitsDone:"العادات المنجزة", eventsToday:"أحداث اليوم",
       streak:"أيام متتالية", noRoutine:"لا توجد مهام روتينية بعد — أضف واحدة أدناه.",
       noDynamic:"لا يوجد شيء إضافي لهذا اليوم.", noHabits:"لا توجد عادات بعد — أضف أول عادة أدناه.",
+      editTask:"تعديل المهمة", deleteTask:"حذف المهمة", editHabit:"تعديل العادة", deleteHabit:"حذف العادة",
+      editEvent:"تعديل الحدث", deleteEvent:"حذف الحدث", habitTimeframe:"الإطار الزمني (اختياري)",
+      habitTimeframePh:"مثال: 8:00 ص - 9:00 ص، أو مساءً", habitName:"اسم العادة", addHabitModalTitle:"إضافة عادة",
+      inactivityNudge:"لا تنسَ مخططك! لديك مهام وعادات بانتظارك اليوم.",
       noEvents:"لا توجد أحداث في هذا اليوم.", pctComplete:" مكتمل", of:" من ", monthAvg:"متوسط الإنجاز الشهري: ",
       goldMedal:"ذهبية — شهر رائع", silverMedal:"فضية — استمرارية ممتازة", bronzeMedal:"برونزية — استمر في البناء",
       seedMedal:"بداية — لا تزال في البداية", happyBirthday:"🎉 عيد ميلاد سعيد! استمتع بيومك 🎉",
@@ -994,6 +1032,50 @@
     showCelebrationCard(title + (body ? " — " + body : ""), false);
   }
 
+  /* ---- Inactivity nudge ----
+     IMPORTANT, honest limitation: this can only ever fire at the moment
+     the user actually reopens this file/tab. A static HTML file with no
+     push server cannot run anything while it isn't open — there is no
+     way for any client-only code (this app included) to wake up a
+     closed browser tab and show a lock-screen notification 24 hours
+     later on its own. What this DOES give you: the moment the user
+     finally does come back, if it's been over 24h, they're greeted
+     with this nudge via the same real-Notification-API-with-fallback
+     path everything else here uses. For a genuine "arrives on its own
+     even if the app is never reopened" nudge, see checkInactiveUsers()
+     in the companion Code.gs — Apps Script can run on its own schedule
+     independent of anyone's browser, and can email a user, which this
+     client-only file fundamentally cannot do. */
+  function fireInactivityNotification(){
+    if(("Notification" in window) && Notification.permission === "granted"){
+      if(swRegistration && swRegistration.showNotification){
+        try{ swRegistration.showNotification(tr("appName"), {body: tr("inactivityNudge"), tag:"inactivity-nudge"}); return; }
+        catch(e){ /* fall through */ }
+      }
+      try{ new Notification(tr("appName"), {body: tr("inactivityNudge"), tag:"inactivity-nudge"}); return; }
+      catch(e){ /* fall through to the in-app card */ }
+    }
+    showCelebrationCard(tr("inactivityNudge"), false);
+  }
+
+  // Local write happens on every call (cheap); the cloud push is
+  // throttled to at most once every 5 minutes so continuous in-app
+  // interaction (taps, typing) doesn't hammer the Apps Script endpoint
+  // on every keystroke — the cloud copy only needs to stay roughly
+  // fresh, not tap-perfect, for the 24h check to work correctly.
+  var lastActivityCloudPush = 0;
+  function touchActivity(){
+    if(!state.user) return;
+    var now = Date.now();
+    localStorage.setItem(skey("lastOpenedTimestamp"), JSON.stringify(now));
+    if(now - lastActivityCloudPush > 5*60*1000){
+      lastActivityCloudPush = now;
+      cloudPushField(state.user, "lastOpenedTimestamp", now);
+    }
+  }
+  document.addEventListener("click", function(){ touchActivity(); }, true);
+  document.addEventListener("input", function(){ touchActivity(); }, true);
+
   function checkReminders(){
     if(!state.user) return;
     var events = load("events", {});
@@ -1017,7 +1099,12 @@
   setInterval(checkReminders, 30000);
   // Also catch up immediately whenever the tab/app regains focus, since a
   // backgrounded tab's timers can be throttled by the browser in the meantime.
-  document.addEventListener("visibilitychange", function(){ if(!document.hidden){ checkReminders(); } });
+  document.addEventListener("visibilitychange", function(){
+    if(!document.hidden){
+      checkReminders();
+      recordAppOpenAndCheckInactivity();
+    }
+  });
   window.addEventListener("focus", checkReminders);
 
   /* ============================================================
@@ -1225,6 +1312,22 @@
     });
   }
 
+  // Records a genuine "app opened / brought to foreground" moment: checks
+  // whether more than 24h passed since the previous one (firing the
+  // inactivity nudge if so), then records now — bypassing touchActivity()'s
+  // throttle, since this is a distinct, one-time event, not continuous
+  // in-session interaction.
+  function recordAppOpenAndCheckInactivity(){
+    if(!state.user) return;
+    var prevOpened = load("lastOpenedTimestamp", null);
+    if(prevOpened && (Date.now() - prevOpened) > 24*60*60*1000){
+      fireInactivityNotification();
+    }
+    localStorage.setItem(skey("lastOpenedTimestamp"), JSON.stringify(Date.now()));
+    cloudPushField(state.user, "lastOpenedTimestamp", Date.now());
+    lastActivityCloudPush = Date.now();
+  }
+
   function showMainApp(){
     loginScreen.classList.add("hidden");
     mainApp.classList.remove("hidden");
@@ -1235,6 +1338,7 @@
     updateNotifPermNote();
     checkReminders(); // catch anything already due the moment this account's app opens
     syncFromCloud();  // fire-and-forget background refresh from the cloud, if configured
+    recordAppOpenAndCheckInactivity();
   }
 
   /* Note: session auto-resume is triggered at the very end of this script,
@@ -1365,7 +1469,8 @@
       var row = document.createElement("div"); row.className="task-row";
       row.innerHTML = '<div class="chk'+(done?' done':'')+'">✓</div>'+
         '<div class="task-text'+(done?' done':'')+'">'+escapeHtml(task.text)+'</div>'+
-        '<button class="del-btn" data-del="1">✕</button>';
+        '<button class="edit-btn" data-edit="1" title="'+tr("editTask")+'">✏️</button>'+
+        '<button class="del-btn" data-del="1" title="'+tr("deleteTask")+'">🗑️</button>';
       row.querySelector(".chk").addEventListener("click", function(){
         var st = load("routineStatus", {});
         st[state.selectedDay] = st[state.selectedDay] || {};
@@ -1373,6 +1478,14 @@
         save("routineStatus", st);
         renderAll();
         maybeCelebrateDaily();
+      });
+      row.querySelector("[data-edit]").addEventListener("click", function(){
+        beginInlineEdit(row.querySelector(".task-text"), task.text, function(newText){
+          var arr = load("routineTasks", []);
+          arr.forEach(function(t){ if(t.id===task.id) t.text = newText; });
+          save("routineTasks", arr);
+          renderAll();
+        });
       });
       row.querySelector("[data-del]").addEventListener("click", function(){
         var arr = load("routineTasks", []).filter(function(t){return t.id!==task.id;});
@@ -1402,13 +1515,22 @@
       var row = document.createElement("div"); row.className="task-row";
       row.innerHTML = '<div class="chk'+(task.done?' done':'')+'">✓</div>'+
         '<div class="task-text'+(task.done?' done':'')+'">'+escapeHtml(task.text)+'</div>'+
-        '<button class="del-btn" data-del="1">✕</button>';
+        '<button class="edit-btn" data-edit="1" title="'+tr("editTask")+'">✏️</button>'+
+        '<button class="del-btn" data-del="1" title="'+tr("deleteTask")+'">🗑️</button>';
       row.querySelector(".chk").addEventListener("click", function(){
         var d = load("dynamicTasks", {});
         d[state.selectedDay].forEach(function(t){ if(t.id===task.id) t.done=!t.done; });
         save("dynamicTasks", d);
         renderAll();
         maybeCelebrateDaily();
+      });
+      row.querySelector("[data-edit]").addEventListener("click", function(){
+        beginInlineEdit(row.querySelector(".task-text"), task.text, function(newText){
+          var d = load("dynamicTasks", {});
+          (d[state.selectedDay] || []).forEach(function(t){ if(t.id===task.id) t.text = newText; });
+          save("dynamicTasks", d);
+          renderAll();
+        });
       });
       row.querySelector("[data-del]").addEventListener("click", function(){
         var d = load("dynamicTasks", {});
@@ -1499,7 +1621,7 @@
     list.innerHTML = "";
     if(dayEvents.length===0){ list.innerHTML = '<p class="muted">'+tr("noEvents")+'</p>'; }
     dayEvents.forEach(function(ev){
-      var chip = document.createElement("div"); chip.className="event-chip";
+      var chip = document.createElement("div"); chip.className="event-chip"; chip.style.cursor="pointer";
       var reminderLabel = "";
       if(ev.notify && ev.reminderAt){
         var rd = new Date(ev.reminderAt);
@@ -1508,8 +1630,12 @@
       }
       chip.innerHTML = '<div class="bar tag-'+ev.color+'"></div>'+
         '<div class="info"><b>'+escapeHtml(ev.title)+'</b><span>'+(ev.alertMsg?escapeHtml(ev.alertMsg):"")+escapeHtml(reminderLabel)+'</span></div>'+
-        '<button class="del-btn" data-del="1">✕</button>';
-      chip.querySelector("[data-del]").addEventListener("click", function(){
+        '<button class="del-btn" data-del="1" title="'+tr("deleteEvent")+'">🗑️</button>';
+      // Tapping the chip itself opens it for editing; the trash icon
+      // still deletes directly without entering edit mode.
+      chip.addEventListener("click", function(){ openEventModalForEdit(ev); });
+      chip.querySelector("[data-del]").addEventListener("click", function(domEvt){
+        domEvt.stopPropagation();
         var ev2 = load("events", {});
         ev2[state.selectedCalDay] = ev2[state.selectedCalDay].filter(function(x){return x.id!==ev.id;});
         save("events", ev2);
@@ -1519,10 +1645,18 @@
     });
   }
 
-  /* -- add event modal -- */
+  function msToDatetimeLocalValue(ms){
+    var d = new Date(ms);
+    var pad = function(n){ return (n+"").padStart(2,"0"); };
+    return d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate())+"T"+pad(d.getHours())+":"+pad(d.getMinutes());
+  }
+
+  /* -- add / edit event modal -- */
   var eventModal = document.getElementById("eventModal");
   var selectedEventColor = "yellow";
-  document.getElementById("addEventBtn").addEventListener("click", function(){
+  var editingEventId = null; // null => creating a new event; otherwise the id being edited
+
+  function resetEventModalFields(){
     document.getElementById("eventTitleInput").value = "";
     document.getElementById("eventAlertInput").value = "";
     document.getElementById("notifySwitch").classList.remove("on");
@@ -1532,8 +1666,45 @@
     document.querySelectorAll(".swatch").forEach(function(s){s.classList.remove("selected");});
     document.querySelector('.swatch[data-color="yellow"]').classList.add("selected");
     selectedEventColor = "yellow";
+  }
+
+  document.getElementById("addEventBtn").addEventListener("click", function(){
+    editingEventId = null;
+    resetEventModalFields();
+    document.getElementById("eventModalTitle").textContent = tr("newEvent");
+    document.getElementById("deleteEventBtn").classList.add("hidden");
     eventModal.classList.remove("hidden");
   });
+
+  function openEventModalForEdit(ev){
+    editingEventId = ev.id;
+    resetEventModalFields();
+    document.getElementById("eventTitleInput").value = ev.title || "";
+    document.getElementById("eventAlertInput").value = ev.alertMsg || "";
+    document.querySelectorAll(".swatch").forEach(function(s){s.classList.remove("selected");});
+    var swatch = document.querySelector('.swatch[data-color="'+ev.color+'"]');
+    if(swatch){ swatch.classList.add("selected"); selectedEventColor = ev.color; }
+    if(ev.notify && ev.reminderAt){
+      document.getElementById("notifySwitch").classList.add("on");
+      document.getElementById("reminderSlide").classList.add("open");
+      document.getElementById("reminderDateTimeInput").value = msToDatetimeLocalValue(ev.reminderAt);
+      updateNotifPermNote();
+    }
+    document.getElementById("eventModalTitle").textContent = tr("editEvent");
+    document.getElementById("deleteEventBtn").classList.remove("hidden");
+    eventModal.classList.remove("hidden");
+  }
+
+  document.getElementById("deleteEventBtn").addEventListener("click", function(){
+    if(!editingEventId) return;
+    var ev2 = load("events", {});
+    ev2[state.selectedCalDay] = (ev2[state.selectedCalDay] || []).filter(function(x){return x.id!==editingEventId;});
+    save("events", ev2);
+    editingEventId = null;
+    eventModal.classList.add("hidden");
+    renderMonth();
+  });
+
   document.querySelectorAll(".swatch").forEach(function(sw){
     sw.addEventListener("click", function(){
       document.querySelectorAll(".swatch").forEach(function(s){s.classList.remove("selected");});
@@ -1547,7 +1718,7 @@
     document.getElementById("reminderSlide").classList.toggle("open", isOn);
     if(isOn){ updateNotifPermNote(); }
   });
-  document.getElementById("cancelEventBtn").addEventListener("click", function(){ eventModal.classList.add("hidden"); });
+  document.getElementById("cancelEventBtn").addEventListener("click", function(){ eventModal.classList.add("hidden"); editingEventId = null; });
   document.getElementById("saveEventBtn").addEventListener("click", function(){
     var title = document.getElementById("eventTitleInput").value.trim();
     if(!title) return;
@@ -1562,18 +1733,30 @@
       }
       reminderAt = parsedMs;
     }
-    var ev = {
-      id: uid(), title: title, color: selectedEventColor,
-      alertMsg: document.getElementById("eventAlertInput").value.trim(),
-      notify: notify, reminderAt: reminderAt, fired: false
-    };
     // Persist first and always close the modal — the save itself must never
     // be blocked or rolled back by a permission prompt or rendering problem below.
     var events = load("events", {});
     events[state.selectedCalDay] = events[state.selectedCalDay] || [];
-    events[state.selectedCalDay].push(ev);
+    if(editingEventId){
+      var existing = events[state.selectedCalDay].find(function(x){return x.id===editingEventId;});
+      if(existing){
+        existing.title = title; existing.color = selectedEventColor;
+        existing.alertMsg = document.getElementById("eventAlertInput").value.trim();
+        existing.notify = notify; existing.reminderAt = reminderAt;
+        // Editing the reminder time re-arms it — a previously fired
+        // reminder for the old time shouldn't silently suppress a new one.
+        existing.fired = false;
+      }
+    } else {
+      events[state.selectedCalDay].push({
+        id: uid(), title: title, color: selectedEventColor,
+        alertMsg: document.getElementById("eventAlertInput").value.trim(),
+        notify: notify, reminderAt: reminderAt, fired: false
+      });
+    }
     save("events", events);
     eventModal.classList.add("hidden");
+    editingEventId = null;
 
     // Re-render the calendar defensively: if this throws for any reason,
     // catch it here so the event stays saved and the UI stays interactive
@@ -1597,7 +1780,7 @@
      15. RENDER: HABITS VIEW
   ============================================================ */
   function renderHabits(){
-    var habits = load("habits", []); // [{id,name,color}]
+    var habits = load("habits", []); // [{id,name,color,timeframe}]
     var log = load("habitLog", {});  // {dateKey:{id:true}}
     var todayKey = fmtDate(new Date());
     var todayLog = log[todayKey] || {};
@@ -1608,10 +1791,12 @@
       var done = !!todayLog[h.id];
       var streak = computeHabitStreak(h.id, log);
       var row = document.createElement("div"); row.className="habit-row";
+      var badgeHtml = h.timeframe ? '<span class="habit-timeframe-badge" style="background:var(--'+h.color+');">'+escapeHtml(h.timeframe)+'</span>' : "";
       row.innerHTML = '<div class="ring-btn'+(done?' done':'')+'" style="'+(done?('background:var(--'+h.color+');border-color:var(--'+h.color+');'):'')+'">✓</div>'+
-        '<div class="habit-name">'+escapeHtml(h.name)+'</div>'+
+        '<div class="habit-name-col"><div class="habit-name">'+escapeHtml(h.name)+'</div>'+badgeHtml+'</div>'+
         '<div class="habit-streak">'+streak+'🔥</div>'+
-        '<button class="del-btn" data-del="1">✕</button>';
+        '<button class="edit-btn" data-edit="1" title="'+tr("editHabit")+'">✏️</button>'+
+        '<button class="del-btn" data-del="1" title="'+tr("deleteHabit")+'">🗑️</button>';
       row.querySelector(".ring-btn").addEventListener("click", function(){
         var lg = load("habitLog", {});
         lg[todayKey] = lg[todayKey] || {};
@@ -1620,6 +1805,7 @@
         renderAll();
         maybeCelebrateDaily();
       });
+      row.querySelector("[data-edit]").addEventListener("click", function(){ openHabitModalForEdit(h); });
       row.querySelector("[data-del]").addEventListener("click", function(){
         save("habits", load("habits", []).filter(function(x){return x.id!==h.id;}));
         renderAll();
@@ -1627,14 +1813,55 @@
       list.appendChild(row);
     });
   }
+
   var HABIT_COLORS = ["yellow","orange","pink","purple"];
-  document.getElementById("habitAddBtn").addEventListener("click", function(){
-    var input = document.getElementById("habitInput");
-    var val = input.value.trim(); if(!val) return;
+  var habitModal = document.getElementById("habitModal");
+  var editingHabitId = null; // null => creating a new habit; otherwise the id being edited
+
+  document.getElementById("addHabitBtn").addEventListener("click", function(){
+    editingHabitId = null;
+    document.getElementById("habitModalTitle").textContent = tr("addHabitModalTitle");
+    document.getElementById("habitNameInput").value = "";
+    document.getElementById("habitTimeframeInput").value = "";
+    document.getElementById("deleteHabitBtn").classList.add("hidden");
+    habitModal.classList.remove("hidden");
+  });
+
+  function openHabitModalForEdit(h){
+    editingHabitId = h.id;
+    document.getElementById("habitModalTitle").textContent = tr("editHabit");
+    document.getElementById("habitNameInput").value = h.name || "";
+    document.getElementById("habitTimeframeInput").value = h.timeframe || "";
+    document.getElementById("deleteHabitBtn").classList.remove("hidden");
+    habitModal.classList.remove("hidden");
+  }
+
+  document.getElementById("cancelHabitBtn").addEventListener("click", function(){
+    habitModal.classList.add("hidden");
+    editingHabitId = null;
+  });
+
+  document.getElementById("deleteHabitBtn").addEventListener("click", function(){
+    if(!editingHabitId) return;
+    save("habits", load("habits", []).filter(function(x){return x.id!==editingHabitId;}));
+    editingHabitId = null;
+    habitModal.classList.add("hidden");
+    renderAll();
+  });
+
+  document.getElementById("saveHabitBtn").addEventListener("click", function(){
+    var name = document.getElementById("habitNameInput").value.trim();
+    if(!name) return;
+    var timeframe = document.getElementById("habitTimeframeInput").value.trim();
     var habits = load("habits", []);
-    habits.push({id:uid(), name:val, color: HABIT_COLORS[habits.length % HABIT_COLORS.length]});
+    if(editingHabitId){
+      habits.forEach(function(h){ if(h.id===editingHabitId){ h.name = name; h.timeframe = timeframe; } });
+    } else {
+      habits.push({ id:uid(), name:name, timeframe:timeframe, color: HABIT_COLORS[habits.length % HABIT_COLORS.length] });
+    }
     save("habits", habits);
-    input.value="";
+    editingHabitId = null;
+    habitModal.classList.add("hidden");
     renderAll();
   });
   function computeHabitStreak(habitId, log){
@@ -1755,6 +1982,35 @@
     return String(s).replace(/[&<>"']/g, function(c){
       return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c];
     });
+  }
+
+  // Shared inline-edit-in-place helper: swaps a text element for a text
+  // input, focused and pre-filled, and commits on Enter or on blur — no
+  // window.prompt() (a blocking dialog, same category this app has
+  // avoided everywhere else) and no separate modal for a one-line rename.
+  // Escape reverts without saving. Committing with the same or empty
+  // text is a no-op (no pointless save() / cloud push).
+  function beginInlineEdit(textEl, currentText, onCommit){
+    var input = document.createElement("input");
+    input.type = "text";
+    input.className = "task-text-input";
+    input.value = currentText;
+    textEl.replaceWith(input);
+    input.focus();
+    input.setSelectionRange(input.value.length, input.value.length);
+    var committed = false;
+    function commit(){
+      if(committed) return;
+      committed = true;
+      var val = input.value.trim();
+      if(val && val !== currentText){ onCommit(val); }
+      else { renderAll(); } // no real change — just re-render to restore the plain text view
+    }
+    input.addEventListener("keydown", function(e){
+      if(e.key === "Enter"){ e.preventDefault(); commit(); }
+      else if(e.key === "Escape"){ e.preventDefault(); committed = true; renderAll(); }
+    });
+    input.addEventListener("blur", commit);
   }
 
   /* ============================================================
