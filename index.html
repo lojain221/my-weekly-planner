@@ -317,6 +317,12 @@
   }
   body.theme-birthday .card{border-color:rgba(255,215,140,0.25);}
   body.theme-birthday header{background:linear-gradient(180deg, #2c1140 70%, rgba(44,17,64,0));}
+  .greeting-banner{
+    display:flex;align-items:center;gap:12px;background:var(--card);border:1px solid var(--stroke);
+    border-radius:18px;padding:14px 16px;margin-bottom:14px;box-shadow:var(--shadow-deep);
+  }
+  .greeting-banner .greeting-icon{font-size:26px;flex:none;line-height:1;}
+  .greeting-banner .greeting-text{font-family:var(--font-head);font-weight:700;font-size:15.5px;color:var(--text);}
   .bday-banner{
     background:linear-gradient(135deg, var(--pink), var(--yellow));color:#2a0f00;text-align:center;
     padding:12px 16px;border-radius:16px;font-family:var(--font-head);font-weight:800;font-size:15px;margin-bottom:14px;
@@ -350,7 +356,7 @@
 
   /* ---------- RTL adjustments ---------- */
   html[dir="rtl"] .header-title, html[dir="rtl"] .field label{text-align:right;}
-  html[dir="rtl"] .task-row, html[dir="rtl"] .event-chip, html[dir="rtl"] .habit-row, html[dir="rtl"] .toggle-row{flex-direction:row-reverse;}
+  html[dir="rtl"] .task-row, html[dir="rtl"] .event-chip, html[dir="rtl"] .habit-row, html[dir="rtl"] .toggle-row, html[dir="rtl"] .greeting-banner{flex-direction:row-reverse;}
   html[dir="rtl"] .add-row{flex-direction:row-reverse;}
   html[dir="rtl"] body{text-align:right;}
   html[dir="rtl"] .modal-actions{flex-direction:row-reverse;}
@@ -444,6 +450,7 @@
     </header>
 
     <main>
+      <div id="greetingSlot"></div>
       <div id="bdayBannerSlot"></div>
       <div id="islamicBannerSlot"></div>
 
@@ -949,31 +956,47 @@
   function stopAmbientConfetti(){ if(ambientConfettiTimer){ clearInterval(ambientConfettiTimer); ambientConfettiTimer=null; } }
 
   /* ============================================================
-     7. NOTIFICATIONS & REMINDERS (Notification API + best-effort Service Worker)
+     7. NOTIFICATIONS & REMINDERS (Notification API + a real Service Worker)
 
      Honest scope of what this can and cannot do, verified directly rather
      than assumed:
      - A Service Worker's script MUST be a real same-origin http(s) file
        fetched over the network — every major browser rejects registering
-       one from an inline blob: URL, and file:// pages can't register a
-       Service Worker at all (no network origin to scope it to). That
-       means a single, self-contained HTML file — opened directly or
-       served as one flat page — cannot use a genuine Service Worker.
-       The attempt below is kept in because it's harmless and forward
-       compatible (it will start working for free if this file is ever
-       split so its Service Worker is a real hosted .js file instead of
-       a blob), but expect it to silently no-op today.
-     - What DOES work from a single file: the direct Notification API.
-       When permission is granted, `new Notification(...)` produces a
-       real OS-level notification from an open tab — including while
-       that tab is in the background or a different app/window is
-       focused — as long as the browser process itself is still running.
-       It will NOT fire if the tab or browser has been fully closed, and
-       Android Chrome specifically disallows the direct constructor
-       (it requires a Service Worker), so this falls back to an in-app
-       card there. iOS Safari only supports push at all for a site added
-       to the Home Screen, which is out of reach for a static file with
-       no backend push server.
+       one from an inline blob: or data: URL (verified directly against
+       this exact restriction earlier), and file:// pages can't register a
+       Service Worker at all. That means a genuinely working Service
+       Worker requires a second file — sw.js — hosted alongside this one.
+       The registration below points at './sw.js'; if you open this file
+       directly (file://) or don't host sw.js next to it, registration
+       fails harmlessly and everything falls back to the Notification API
+       path, exactly as before.
+     - Even with a real Service Worker registered, it CANNOT wake itself
+       up on a schedule, "listen for timestamps" in the background, or
+       run any kind of persistent loop — that capability doesn't exist on
+       the web platform. It only wakes for: a push message from a real
+       push server (not implemented here — see the note in sw.js and
+       Code.gs), a Periodic Background Sync event (Chrome/Android only,
+       requires the PWA installed to the home screen, no guaranteed
+       timing, and NOT IMPLEMENTED AT ALL in Safari — it cannot serve as
+       a Safari fallback because there is nothing to fall back to there),
+       or a notification being tapped.
+     - What DOES reliably work from here: the direct Notification API.
+       When permission is granted, `new Notification(...)` (or, once a
+       real Service Worker is active, `registration.showNotification(...)`)
+       produces a real OS-level notification from an open tab — including
+       while that tab is backgrounded or another app is focused — as long
+       as the browser process itself is still running. It will NOT fire
+       if the tab or browser has been fully closed, and Android Chrome
+       specifically disallows the direct constructor (it requires a
+       Service Worker), which is exactly why having a real one now helps
+       there. iOS Safari only supports push at all for a site added to
+       the Home Screen, backed by a real push server — out of reach for a
+       static file with no backend infrastructure for that.
+     - For a notification that arrives independent of whether the app or
+       phone is even open, see checkPendingReminders() in the companion
+       Code.gs: Apps Script runs on Google's own schedule regardless of
+       any browser, and sends real email — the one channel available here
+       that isn't subject to any of the above limitations.
      - Whenever the real OS notification path isn't available (denied,
        unsupported, or the Android/iOS restrictions above), reminders
        still fire as an in-app visual card so nothing is silently lost —
@@ -983,17 +1006,48 @@
   function registerReminderServiceWorker(){
     if(!("serviceWorker" in navigator)) return;
     try{
-      var swSource = "self.addEventListener('message', function(e){ var d = e.data || {}; if(d.type === 'show-reminder'){ self.registration.showNotification(d.title, { body: d.body, tag: d.tag }); } });";
-      var blob = new Blob([swSource], {type:"application/javascript"});
-      var swUrl = URL.createObjectURL(blob);
-      navigator.serviceWorker.register(swUrl).then(function(reg){
+      navigator.serviceWorker.register("./sw.js").then(function(reg){
         swRegistration = reg;
+        // Best-effort: hand the Service Worker enough to check reminders
+        // on its own during a periodicsync event, if the browser ever
+        // grants one (see the honest caveats on periodicsync above and
+        // in sw.js — this is a bonus path, not something to rely on).
+        pushSyncContextToServiceWorker();
       }).catch(function(e){
-        // Expected on file:// pages and on any browser that (correctly)
-        // refuses a blob: script URL — see the note above. Reminders
-        // still work via the Notification API fallback in fireNotification().
+        // Expected on file:// pages, or if sw.js isn't hosted alongside
+        // this file — see the note above. Reminders still work via the
+        // Notification API fallback in fireNotification().
       });
     }catch(e){ /* Service Worker unsupported in this browser — fallback path handles reminders. */ }
+  }
+
+  // Gives the (real, if registered) Service Worker what it needs to make
+  // its own best-effort periodicsync check: the cloud endpoint, this
+  // account's credentials (already client-visible, same as everywhere
+  // else in this app), and the reminders currently known on this device.
+  // Sent again every time reminders are checked on the main thread, so
+  // the Service Worker's copy stays reasonably fresh without needing any
+  // storage access of its own (Service Workers can't use localStorage).
+  function pushSyncContextToServiceWorker(){
+    if(!swRegistration || !swRegistration.active || !state.user) return;
+    try{
+      var events = load("events", {});
+      var pending = [];
+      Object.keys(events).forEach(function(dateKey){
+        events[dateKey].forEach(function(ev){
+          if(ev.notify && ev.reminderAt && !ev.fired){ pending.push(ev); }
+        });
+      });
+      swRegistration.active.postMessage({
+        type: "sync-context",
+        cloudUrl: isCloudConfigured() ? GOOGLE_SCRIPT_URL : null,
+        username: state.user,
+        password: findUserPassword(state.user),
+        pendingReminders: pending,
+        inactivityNudgeText: tr("inactivityNudge"),
+        appName: tr("appName")
+      });
+    }catch(e){ /* never let this affect the main thread's own reminder handling */ }
   }
 
   function updateNotifPermNote(){
@@ -1410,6 +1464,53 @@
     document.body.classList.toggle("theme-islamic", !!islamicKey);
     var islSlot = document.getElementById("islamicBannerSlot");
     islSlot.innerHTML = islamicKey ? '<div class="islamic-banner">'+tr(islamicKey)+'</div>' : "";
+  }
+
+  /* ============================================================
+     11.5 WEATHER-ADAPTIVE GREETING
+     Purely computed from the local device clock + current username +
+     current language — nothing here is stored or read from
+     localStorage/cloud, so this never touches the sync framework.
+  ============================================================ */
+  function getGreetingText(username){
+    var hour = new Date().getHours();
+    var band;
+    if(hour >= 5 && hour < 12) band = "morning";
+    else if(hour >= 12 && hour < 17) band = "afternoon";
+    else if(hour >= 17 && hour < 22) band = "evening";
+    else band = "night";
+
+    var icon = { morning:"☀️", afternoon:"🌤️", evening:"🌇", night:"🌙" }[band];
+    var text;
+
+    if(state.lang === "ar"){
+      if(band === "morning") text = "صباح الخير يا " + username + "! ";
+      else if(band === "afternoon") text = "نهارك سعيد يا " + username + "! ";
+      else if(band === "evening") text = "مساء الخير يا " + username + "! ";
+      else {
+        // Nighttime Arabic greeting is hardcoded to this exact feminine
+        // form for every account, regardless of username — an explicit,
+        // deliberate content choice for this app, not a default any
+        // other locale/greeting in this file follows.
+        text = "تصبحي على طاعة الله يا " + username + "! ";
+      }
+    } else {
+      if(band === "morning") text = "Good morning, " + username + "! ";
+      else if(band === "afternoon") text = "Good afternoon, " + username + "! ";
+      else if(band === "evening") text = "Good evening, " + username + "! ";
+      else text = "Rest well tonight, " + username + "! ";
+    }
+    return { icon: icon, text: text + icon };
+  }
+
+  function renderGreeting(){
+    var slot = document.getElementById("greetingSlot");
+    if(!slot || !state.user) return;
+    var g = getGreetingText(state.user);
+    slot.innerHTML = '<div class="greeting-banner">'+
+      '<span class="greeting-icon">'+g.icon+'</span>'+
+      '<span class="greeting-text">'+escapeHtml(g.text)+'</span>'+
+      '</div>';
   }
 
   /* ============================================================
@@ -2019,6 +2120,7 @@
   function renderAll(){
     if(!state.user) return;
     applyThemeOverrides();
+    renderGreeting();
     renderProfile();
     renderWeekStrip();
     renderRoutineList();
@@ -2045,7 +2147,7 @@
   })();
 
   /* Refresh theme + reports once a minute in case the day rolls over while app is open */
-  setInterval(function(){ if(state.user){ applyThemeOverrides(); renderReports(); } }, 60000);
+  setInterval(function(){ if(state.user){ applyThemeOverrides(); renderGreeting(); renderReports(); } }, 60000);
 
 })();
 </script>
