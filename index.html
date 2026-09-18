@@ -277,9 +277,10 @@
   .go-btn{max-width:220px;width:80%;padding:12px;font-size:14px;}
   .game-tip{font-size:12px;color:var(--text-dim);margin-top:12px;text-align:center;}
 
-/* ---------- Wird module (Quran + Zikr) ----------
-     Self-contained block: it introduces its own classes only and never
-     redefines anything the planner, game or theme layers rely on. */
+/* ---------- Wird module (Quran mushaf + Zikr) ----------
+     Self-contained block: it introduces its own classes and its own
+     --page-* variables only, and never redefines anything the planner,
+     game or theme layers rely on. */
   .wird-subtabs{display:flex;gap:8px;margin-bottom:14px;}
   .wird-subtab{
     flex:1;padding:12px 8px;border-radius:14px;border:1px solid var(--stroke);
@@ -288,14 +289,23 @@
   .wird-subtab.active{background:linear-gradient(135deg,var(--purple),#8f6ae8);color:#fff;border-color:transparent;}
   .wird-pane.hidden{display:none !important;}
 
-  .bookmark-jump{
-    display:flex;align-items:center;gap:10px;width:100%;padding:13px 14px;border-radius:16px;
-    border:1px solid rgba(255,209,102,0.45);background:rgba(255,209,102,0.10);
-    color:var(--text);font-weight:700;font-size:13.5px;margin-bottom:14px;text-align:inherit;
+  /* --- bookmark manager --- */
+  .bm-row{display:flex;align-items:center;gap:10px;padding:11px 2px;border-bottom:1px solid var(--stroke);}
+  .bm-row:last-child{border-bottom:none;}
+  .bm-ic{font-size:17px;flex:none;}
+  .bm-info{flex:1;min-width:0;}
+  .bm-info b{display:block;font-size:14.5px;font-weight:700;}
+  .bm-info span{font-size:11.5px;color:var(--text-dim);}
+  .bm-go{
+    padding:9px 14px;border-radius:12px;border:none;flex:none;
+    background:linear-gradient(135deg,var(--purple),#8f6ae8);color:#fff;font-weight:700;font-size:12.5px;
   }
-  .bookmark-jump .bm-ic{font-size:18px;flex:none;}
-  .bookmark-jump .bm-sub{display:block;font-size:11.5px;color:var(--text-dim);font-weight:500;margin-top:2px;}
+  .bm-del{
+    background:none;border:1px solid var(--stroke);color:var(--pink);
+    border-radius:12px;width:38px;height:38px;font-size:14px;flex:none;
+  }
 
+  /* --- surah index --- */
   .surah-search{
     width:100%;padding:11px 13px;border-radius:12px;border:1px solid var(--stroke);
     background:var(--bg-deep-2);color:var(--text);font-size:14px;outline:none;margin-bottom:6px;
@@ -312,35 +322,78 @@
   }
   .surah-meta{font-size:11px;color:var(--text-faint);flex:none;}
 
-  .reader-head{display:flex;align-items:center;gap:10px;margin-bottom:10px;}
+  /* --- mushaf page --- */
+  .reader-head{display:flex;align-items:center;gap:10px;margin-bottom:12px;}
   .reader-head .r-title{
     flex:1;text-align:center;font-family:'Amiri','Scheherazade New',serif;
-    font-size:24px;font-weight:700;direction:rtl;
+    font-size:22px;font-weight:700;direction:rtl;line-height:1.4;
   }
   .icon-sq{
     width:40px;height:40px;border-radius:13px;border:1px solid var(--stroke);
     background:var(--bg-deep-2);color:var(--text);font-size:16px;flex:none;
   }
   .icon-sq.on{background:var(--yellow);color:#1a1500;border-color:var(--yellow);}
-  .basmala{
-    text-align:center;font-family:'Amiri','Scheherazade New',serif;font-size:24px;
-    color:var(--yellow);padding:6px 0 14px;direction:rtl;
-  }
-  .ayah{
-    padding:12px 8px;border-bottom:1px dashed var(--stroke);cursor:pointer;
-    font-family:'Amiri','Scheherazade New','Traditional Arabic',serif;
-    font-size:23px;line-height:2.15;text-align:justify;direction:rtl;
-  }
-  .ayah:last-child{border-bottom:none;}
-  .ayah.bookmarked{background:rgba(255,209,102,0.12);border-radius:14px;border-bottom-color:transparent;}
-  .ayah-num{
-    display:inline-flex;align-items:center;justify-content:center;min-width:28px;height:28px;
-    margin:0 6px;border-radius:50%;background:var(--bg-deep-2);color:var(--yellow);
-    font-family:var(--font-body);font-size:12px;font-weight:700;vertical-align:middle;
-  }
-  .reader-status{padding:26px 6px;text-align:center;color:var(--text-dim);font-size:13.5px;line-height:1.8;}
-  .reader-status button{margin-top:12px;}
 
+  /* A dark page by default and a cream page in light mode, so the mushaf
+     reads like a book either way without blinding anyone at night. */
+  .mushaf-wrap{
+    --page-bg:#0f1a42; --page-ink:#f6eeda; --page-line:rgba(255,209,102,0.30); --page-dim:rgba(246,238,218,0.55);
+    position:relative;border-radius:20px;touch-action:pan-y;
+  }
+  body.light-mode .mushaf-wrap{
+    --page-bg:#fdf7e7; --page-ink:#2b1f08; --page-line:rgba(150,110,40,0.35); --page-dim:rgba(43,31,8,0.55);
+  }
+  .mushaf-page{
+    background:var(--page-bg);color:var(--page-ink);
+    border:2px solid var(--page-line);border-radius:20px;
+    padding:18px 16px 12px;min-height:430px;display:flex;flex-direction:column;
+  }
+  .page-head{
+    display:flex;justify-content:space-between;align-items:center;gap:10px;
+    font-size:11.5px;color:var(--page-dim);font-weight:700;direction:rtl;
+    border-bottom:1px solid var(--page-line);padding-bottom:8px;margin-bottom:12px;
+  }
+  .page-body{flex:1;}
+  .page-text{
+    font-family:'Amiri','Scheherazade New','Traditional Arabic',serif;
+    font-size:24px;line-height:2.35;direction:rtl;
+    text-align:justify;text-align-last:center;word-spacing:0.05em;
+  }
+  .surah-banner{
+    margin:16px 0 6px;padding:9px 10px;border-radius:12px;text-align:center;direction:rtl;
+    border:1px solid var(--page-line);background:rgba(255,209,102,0.08);
+    font-family:'Amiri','Scheherazade New',serif;font-size:20px;font-weight:700;
+  }
+  .basmala{
+    text-align:center;font-family:'Amiri','Scheherazade New',serif;font-size:22px;
+    padding:8px 0 10px;direction:rtl;opacity:0.92;
+  }
+  .ayah-num{
+    display:inline-flex;align-items:center;justify-content:center;min-width:27px;height:27px;
+    margin:0 5px;border-radius:50%;border:1px solid var(--page-line);
+    font-family:var(--font-body);font-size:11.5px;font-weight:700;vertical-align:middle;
+  }
+  .page-foot{
+    border-top:1px solid var(--page-line);margin-top:12px;padding-top:9px;
+    text-align:center;font-size:12px;font-weight:700;color:var(--page-dim);
+  }
+  .tap-zone{position:absolute;top:70px;bottom:70px;width:24%;}
+  .tz-next{left:0;} .tz-prev{right:0;}
+
+  .page-nav{display:flex;align-items:center;gap:10px;margin-top:14px;}
+  .page-btn{
+    flex:1;padding:13px 8px;border-radius:14px;border:1px solid var(--stroke);
+    background:var(--card-hi);color:var(--text);font-weight:700;font-size:13px;
+  }
+  .page-btn:disabled{opacity:0.4;}
+  .page-jump{
+    width:78px;padding:12px 6px;border-radius:14px;border:1px solid var(--stroke);
+    background:var(--bg-deep-2);color:var(--text);font-size:14px;text-align:center;outline:none;flex:none;
+  }
+  .reader-status{padding:40px 10px;text-align:center;color:var(--page-dim);font-size:13.5px;line-height:1.9;}
+  .reader-status button{margin-top:14px;max-width:210px;}
+
+  /* --- zikr --- */
   .zikr-group{
     background:var(--card);border:1px solid var(--stroke);border-radius:var(--radius-lg);
     margin-bottom:14px;overflow:hidden;box-shadow:var(--shadow-deep);
@@ -348,7 +401,7 @@
   .zikr-head{
     width:100%;display:flex;align-items:center;gap:12px;padding:16px 18px;
     background:none;border:none;color:var(--text);font-family:var(--font-head);
-    font-weight:700;font-size:15.5px;text-align:inherit;
+    font-weight:700;font-size:15px;text-align:inherit;
   }
   .zikr-head .z-ic{font-size:20px;flex:none;}
   .zikr-head .z-label{flex:1;}
@@ -360,7 +413,7 @@
     background:var(--bg-deep-2);border:1px solid var(--stroke);border-radius:16px;
     padding:14px;margin-bottom:10px;
   }
-  .zikr-item.done{border-color:rgba(255,209,102,0.5);}
+  .zikr-item.done{border-color:rgba(255,209,102,0.55);background:rgba(255,209,102,0.07);}
   .zikr-note{font-size:11.5px;color:var(--yellow);font-weight:700;margin-bottom:8px;}
   .zikr-text{
     font-family:'Amiri','Scheherazade New','Traditional Arabic',serif;
@@ -369,11 +422,11 @@
   .zikr-foot{display:flex;align-items:center;gap:10px;margin-top:12px;}
   .zikr-target{font-size:11.5px;color:var(--text-dim);flex:1;}
   .zikr-count-btn{
-    min-width:74px;padding:11px 14px;border-radius:14px;border:none;
+    min-width:76px;padding:12px 14px;border-radius:14px;border:none;
     background:linear-gradient(135deg,var(--orange),var(--pink));color:#241000;
-    font-weight:800;font-size:16px;flex:none;
+    font-weight:800;font-size:17px;flex:none;transition:background .2s ease;
   }
-  .zikr-count-btn.done{background:var(--yellow);color:#1a1500;}
+  .zikr-count-btn.done{background:var(--yellow);color:#1a1500;opacity:0.92;}
   .zikr-reset{
     background:none;border:1px solid var(--stroke);color:var(--text-faint);
     border-radius:12px;width:40px;height:40px;font-size:14px;flex:none;
@@ -691,7 +744,7 @@
           <p class="game-tip" id="gameTipLine"></p>
         </div>
       </section>
-      <!-- Wird view: Quran + Zikr -->
+      <!-- Wird view: Quran mushaf + Zikr -->
       <section class="view" id="view-wird">
         <div class="wird-subtabs">
           <button class="wird-subtab active" id="wirdTabQuran" data-wird="quran">القرآن الكريم</button>
@@ -700,10 +753,10 @@
 
         <!-- ---- Quran pane ---- -->
         <div class="wird-pane" id="wirdPaneQuran">
-          <button class="bookmark-jump hidden" id="bookmarkJumpBtn">
-            <span class="bm-ic">🔖</span>
-            <span><span id="bookmarkJumpLabel"></span><span class="bm-sub" id="bookmarkJumpSub"></span></span>
-          </button>
+          <div class="card" id="bookmarksCard">
+            <div class="section-title"><span id="bookmarksTitle">Bookmarks</span></div>
+            <div id="bookmarkList"></div>
+          </div>
 
           <div class="card" id="surahIndexCard">
             <div class="section-title"><span id="surahIndexTitle">Surah index</span></div>
@@ -711,13 +764,23 @@
             <div id="surahList"></div>
           </div>
 
-          <div class="card hidden" id="surahReaderCard">
+          <div class="card hidden" id="mushafCard">
             <div class="reader-head">
               <button class="icon-sq" id="backToIndexBtn" title="Back">‹</button>
               <div class="r-title" id="readerTitle"></div>
-              <button class="icon-sq" id="bookmarkHereBtn" title="Bookmark">🔖</button>
+              <button class="icon-sq" id="bookmarkToggleBtn" title="Bookmark">🔖</button>
             </div>
-            <div id="ayahList"></div>
+            <div class="mushaf-wrap" id="mushafWrap">
+              <div class="mushaf-page" id="mushafPage"></div>
+              <div class="tap-zone tz-next" id="tapNext"></div>
+              <div class="tap-zone tz-prev" id="tapPrev"></div>
+            </div>
+            <div class="page-nav">
+              <button class="page-btn" id="prevPageBtn">Previous</button>
+              <input class="page-jump" id="pageJumpInput" type="number" min="1" max="604">
+              <button class="page-btn" id="nextPageBtn">Next</button>
+            </div>
+            <p class="game-tip" id="pageHint"></p>
           </div>
         </div>
 
@@ -970,12 +1033,17 @@
       notifDenied:"Notifications are blocked in this browser — you'll get an in-app alert instead.",
       notifWillAsk:"We'll ask permission for system notifications when you save.",
       /* --- Wird module (Quran + Zikr) --- */
-      navWird:"Wird", wirdSurahIndex:"Surah index — فهرس السور",
-      wirdSearchPh:"Search by name or number…", wirdGoToBookmark:"Go to bookmark",
-      wirdBookmarkSaved:"Bookmark saved", wirdAyah:"Ayah", wirdAyahsWord:"ayahs",
-      wirdNoMatch:"No surah matches that search.",
-      wirdLoading:"Loading the surah…",
-      wirdLoadFailed:"Couldn't load this surah. It needs a connection the first time you open it; after that it is stored on this device.",
+      navWird:"Wird", wirdBookmarks:"Bookmarks — العلامات المرجعية",
+      wirdNoBookmarks:"No bookmarks yet. Open any page and tap 🔖 to save your place.",
+      wirdSurahIndex:"Surah index — فهرس السور", wirdSearchPh:"Search by name or number…",
+      wirdNoMatch:"No surah matches that search.", wirdAyahsWord:"ayahs",
+      wirdPage:"Page", wirdJuz:"Juz", wirdPrevPage:"Previous", wirdNextPage:"Next",
+      wirdPageHint:"Tap the left edge or swipe left for the next page, the right edge for the previous one.",
+      wirdSaveBookmark:"Save bookmark", wirdRemoveBookmark:"Remove bookmark",
+      wirdBookmarkSaved:"Bookmark saved", wirdBookmarkRemoved:"Bookmark removed",
+      wirdAlreadyBookmarked:"This page is already bookmarked.", wirdGo:"Go",
+      wirdLoading:"Loading the page…",
+      wirdLoadFailed:"Couldn't load this page. It needs a connection the first time you open it; after that it is stored on this device.",
       wirdRetry:"Try again", wirdRepeat:"Repeat", wirdTimes:"times",
       wirdResetCount:"Reset this counter", wirdGroupDone:"Remembrance completed — تقبل الله 🤲",
       wirdZikrSource:"Selected adhkar as narrated in Hisn al-Muslim. Counters reset each day.",
@@ -1024,12 +1092,17 @@
       notifDenied:"الإشعارات محظورة في هذا المتصفح — ستحصل على تنبيه داخل التطبيق بدلاً من ذلك.",
       notifWillAsk:"سنطلب إذن الإشعارات عند الحفظ.",
       /* --- وحدة الورد (القرآن والأذكار) --- */
-      navWird:"الورد", wirdSurahIndex:"فهرس السور",
-      wirdSearchPh:"ابحث بالاسم أو الرقم…", wirdGoToBookmark:"اذهب إلى العلامة المرجعية",
-      wirdBookmarkSaved:"تم حفظ العلامة المرجعية", wirdAyah:"آية", wirdAyahsWord:"آية",
-      wirdNoMatch:"لا توجد سورة مطابقة للبحث.",
-      wirdLoading:"جارٍ تحميل السورة…",
-      wirdLoadFailed:"تعذر تحميل السورة. تحتاج إلى اتصال بالإنترنت في أول مرة فقط، ثم تُحفظ على هذا الجهاز.",
+      navWird:"الورد", wirdBookmarks:"العلامات المرجعية",
+      wirdNoBookmarks:"لا توجد علامات مرجعية بعد. افتح أي صفحة واضغط 🔖 لحفظ موضعك.",
+      wirdSurahIndex:"فهرس السور", wirdSearchPh:"ابحث بالاسم أو الرقم…",
+      wirdNoMatch:"لا توجد سورة مطابقة للبحث.", wirdAyahsWord:"آية",
+      wirdPage:"صفحة", wirdJuz:"جزء", wirdPrevPage:"الصفحة السابقة", wirdNextPage:"الصفحة التالية",
+      wirdPageHint:"اضغط على الحافة اليسرى أو اسحب لليسار للصفحة التالية، والحافة اليمنى للصفحة السابقة.",
+      wirdSaveBookmark:"حفظ العلامة المرجعية", wirdRemoveBookmark:"حذف العلامة المرجعية",
+      wirdBookmarkSaved:"تم حفظ العلامة المرجعية", wirdBookmarkRemoved:"تم حذف العلامة المرجعية",
+      wirdAlreadyBookmarked:"هذه الصفحة محفوظة بالفعل.", wirdGo:"اذهب",
+      wirdLoading:"جارٍ تحميل الصفحة…",
+      wirdLoadFailed:"تعذر تحميل الصفحة. تحتاج إلى اتصال بالإنترنت في أول مرة فقط، ثم تُحفظ على هذا الجهاز.",
       wirdRetry:"أعد المحاولة", wirdRepeat:"التكرار", wirdTimes:"مرات",
       wirdResetCount:"إعادة تعيين العداد", wirdGroupDone:"تم إتمام الأذكار — تقبل الله 🤲",
       wirdZikrSource:"مختارات من الأذكار كما وردت في حصن المسلم. تُعاد العدادات كل يوم.",
@@ -2775,22 +2848,23 @@
 
 
   /* ============================================================
-     19. WIRD MODULE — Quran 📖 + Zikr 🕌
+     19. WIRD MODULE — Quran 📖 (page-by-page mushaf) + Zikr 🕌
 
-     Another fully self-contained section. Like the mini-game it adds no
-     new fields to SYNCABLE_FIELDS, so the Google Sheet keeps the exact
-     same shape it has today; its two stored values go through the same
-     skey()-scoped helpers as everything else and are therefore tied to
-     the signed-in account:
-       "<USER>_quranBookmark"  -> { surah, ayah, name, savedAt }
+     Fully self-contained. Like the mini-game it adds nothing to
+     SYNCABLE_FIELDS, so the Google Sheet keeps exactly the shape it has
+     today; its stored values go through the same skey()-scoped helpers
+     and are therefore tied to the signed-in account:
+       "<USER>_quranBookmarks" -> [ { id, page, surah, name, savedAt } ]
        "<USER>_zikrProgress"   -> { date, counts:{ itemId: remaining } }
+     The older single-bookmark key "<USER>_quranBookmark" is read once and
+     migrated into the list; it is left in place, never deleted.
 
-     Quran text is fetched on demand from the public AlQuran Cloud API
-     (Uthmani script) and cached in localStorage per surah, so a surah
-     read once stays readable offline afterwards. Being honest about the
-     trade-off: the FIRST time a given surah is opened it does need a
-     working connection — embedding the whole mushaf inline would add
-     roughly a megabyte to this single file and is deliberately avoided.
+     Quran text is fetched a page at a time from the public AlQuran Cloud
+     API (Uthmani script) and cached in localStorage per page, so any page
+     read once stays readable offline. Being honest about the trade-off:
+     the FIRST time a given page is opened it needs a working connection —
+     embedding all 604 pages inline would add roughly a megabyte to this
+     single file and is deliberately avoided.
   ============================================================ */
 
   // Arabic names + ayah counts for all 114 surahs.
@@ -2820,40 +2894,142 @@
     ["المسد",5],["الإخلاص",4],["الفلق",5],["الناس",6]
   ];
 
-  var QURAN_API = "https://api.alquran.cloud/v1/surah/";
-  var quranMemCache = {};
-  var wirdState = { pane:"quran", surah:null, ayahs:null, loading:false };
+  // Opening page of each surah in the standard 604-page Madani mushaf.
+  // If a page turns out not to actually contain ayah 1 of the surah the
+  // user asked for, the code below asks the API for the true page and
+  // remembers the correction, so a wrong entry here can only ever cost
+  // one extra request the first time.
+  var SURAH_START_PAGE = [
+    1,2,50,77,106,128,151,177,187,208,221,235,249,255,262,267,282,293,305,312,
+    322,332,342,350,359,367,377,385,396,404,411,415,418,428,434,440,446,453,458,467,
+    477,483,489,496,499,502,507,511,515,518,520,523,526,528,531,534,537,542,545,549,
+    551,553,554,556,558,560,562,564,566,568,570,572,574,575,577,578,580,582,583,585,
+    586,587,587,589,590,591,591,592,593,594,595,595,596,596,597,597,598,598,599,599,600,
+    600,601,601,601,602,602,602,603,603,603,604,604,604
+  ];
+
+  var QURAN_PAGE_API = "https://api.alquran.cloud/v1/page/";
+  var QURAN_AYAH_API = "https://api.alquran.cloud/v1/ayah/";
+  var LAST_PAGE = 604;
+
+  var wirdState = { pane:"quran", page:null, ayahs:null, wantSurah:null, loading:false };
+  var pageMemCache = {};
 
   function toArabicDigits(n){
     if(state.lang !== "ar") return String(n);
     return String(n).replace(/[0-9]/g, function(d){ return "٠١٢٣٤٥٦٧٨٩"[+d]; });
   }
 
-  /* ---- Bookmark (per account) ---- */
-  function loadBookmark(){ return state.user ? load("quranBookmark", null) : null; }
-  function saveBookmark(surah, ayah){
-    if(!state.user) return;
-    save("quranBookmark", {
-      surah: surah, ayah: ayah,
-      name: SURAHS[surah-1][0],
+  /* ============================================================
+     BOOKMARKS — a full list, per account, editable
+  ============================================================ */
+  function loadBookmarks(){
+    if(!state.user) return [];
+    var list = load("quranBookmarks", null);
+    if(!list){
+      // One-time migration from the older single-bookmark shape. The old
+      // key is read, never removed, so nothing is lost either way.
+      var old = load("quranBookmark", null);
+      list = [];
+      if(old && old.surah){
+        list.push({
+          id: uid(), page: old.page || SURAH_START_PAGE[old.surah-1],
+          surah: old.surah, name: old.name || SURAHS[old.surah-1][0],
+          savedAt: old.savedAt || Date.now()
+        });
+      }
+      if(list.length){ save("quranBookmarks", list); }
+    }
+    return list;
+  }
+  function saveBookmarks(list){ if(state.user){ save("quranBookmarks", list); } }
+
+  function bookmarkForPage(page){
+    var list = loadBookmarks();
+    for(var i=0;i<list.length;i++){ if(list[i].page === page) return list[i]; }
+    return null;
+  }
+
+  function addBookmarkForCurrentPage(){
+    if(!wirdState.page) return;
+    var list = loadBookmarks();
+    if(bookmarkForPage(wirdState.page)){ showToast(tr("wirdAlreadyBookmarked")); return; }
+    var surahNum = (wirdState.ayahs && wirdState.ayahs.length) ? wirdState.ayahs[0].s : null;
+    list.unshift({
+      id: uid(), page: wirdState.page,
+      surah: surahNum, name: surahNum ? SURAHS[surahNum-1][0] : "",
       savedAt: Date.now()
     });
-    renderBookmarkShortcut();
-    showToast(tr("wirdBookmarkSaved") + " — " + SURAHS[surah-1][0] + " : " + toArabicDigits(ayah));
+    if(list.length > 30){ list = list.slice(0,30); } // keep the list usable
+    saveBookmarks(list);
+    renderBookmarkList();
+    updateBookmarkButton();
+    showToast(tr("wirdBookmarkSaved") + " — " + tr("wirdPage") + " " + toArabicDigits(wirdState.page));
   }
 
-  function renderBookmarkShortcut(){
-    var btn = document.getElementById("bookmarkJumpBtn");
+  function removeBookmark(id){
+    var list = loadBookmarks().filter(function(b){ return b.id !== id; });
+    saveBookmarks(list);
+    renderBookmarkList();
+    updateBookmarkButton();
+    showToast(tr("wirdBookmarkRemoved"));
+  }
+
+  function toggleBookmarkForCurrentPage(){
+    var existing = bookmarkForPage(wirdState.page);
+    if(existing){ removeBookmark(existing.id); }
+    else { addBookmarkForCurrentPage(); }
+  }
+
+  function updateBookmarkButton(){
+    var btn = document.getElementById("bookmarkToggleBtn");
     if(!btn) return;
-    var bm = loadBookmark();
-    if(!bm || !bm.surah){ btn.classList.add("hidden"); return; }
-    btn.classList.remove("hidden");
-    document.getElementById("bookmarkJumpLabel").textContent = tr("wirdGoToBookmark");
-    document.getElementById("bookmarkJumpSub").textContent =
-      (bm.name || SURAHS[bm.surah-1][0]) + " · " + tr("wirdAyah") + " " + toArabicDigits(bm.ayah);
+    var on = !!bookmarkForPage(wirdState.page);
+    btn.classList.toggle("on", on);
+    btn.title = on ? tr("wirdRemoveBookmark") : tr("wirdSaveBookmark");
   }
 
-  /* ---- Surah index ---- */
+  function renderBookmarkList(){
+    var host = document.getElementById("bookmarkList");
+    if(!host) return;
+    var list = loadBookmarks();
+    host.innerHTML = "";
+    if(!list.length){
+      host.innerHTML = '<p class="muted">'+tr("wirdNoBookmarks")+'</p>';
+      return;
+    }
+    list.forEach(function(bm){
+      var row = document.createElement("div");
+      row.className = "bm-row";
+      var when = new Date(bm.savedAt).toLocaleDateString(state.lang === "ar" ? "ar" : "en",
+        { month:"short", day:"numeric" });
+      row.innerHTML = '<span class="bm-ic">🔖</span>'+
+        '<div class="bm-info"><b>'+escapeHtml(bm.name ? ("سورة "+bm.name) : tr("wirdPage"))+'</b>'+
+        '<span>'+tr("wirdPage")+" "+toArabicDigits(bm.page)+" · "+escapeHtml(when)+'</span></div>'+
+        '<button class="bm-go" data-go="1">'+tr("wirdGo")+'</button>'+
+        '<button class="bm-del" data-del="1" title="'+tr("wirdRemoveBookmark")+'">🗑️</button>';
+      row.querySelector("[data-go]").addEventListener("click", function(){ openPage(bm.page); });
+      row.querySelector("[data-del]").addEventListener("click", function(){ removeBookmark(bm.id); });
+      host.appendChild(row);
+    });
+  }
+
+  /* ============================================================
+     SURAH INDEX
+  ============================================================ */
+  function startPageFor(surahNum){
+    var fixes = {};
+    try{ fixes = JSON.parse(localStorage.getItem("quran_start_fix") || "{}"); }catch(e){ fixes = {}; }
+    return fixes[surahNum] || SURAH_START_PAGE[surahNum-1];
+  }
+  function rememberStartPageFix(surahNum, page){
+    try{
+      var fixes = JSON.parse(localStorage.getItem("quran_start_fix") || "{}");
+      fixes[surahNum] = page;
+      localStorage.setItem("quran_start_fix", JSON.stringify(fixes));
+    }catch(e){ /* cache unavailable — we just refetch next time */ }
+  }
+
   function renderSurahIndex(filter){
     var list = document.getElementById("surahList");
     if(!list) return;
@@ -2866,136 +3042,176 @@
       row.className = "surah-row";
       row.innerHTML = '<div class="surah-num">'+num+'</div>'+
         '<div class="surah-name">سورة '+escapeHtml(s[0])+'</div>'+
-        '<div class="surah-meta">'+toArabicDigits(s[1])+' '+tr("wirdAyahsWord")+'</div>';
+        '<div class="surah-meta">'+toArabicDigits(s[1])+' '+tr("wirdAyahsWord")+
+        ' · '+tr("wirdPage")+' '+toArabicDigits(startPageFor(num))+'</div>';
       row.addEventListener("click", function(){ openSurah(num); });
       list.appendChild(row);
     });
     if(!list.firstChild){ list.innerHTML = '<p class="muted">'+tr("wirdNoMatch")+'</p>'; }
   }
 
-  /* ---- Surah text: localStorage cache first, then network ---- */
-  function cachedSurahKey(n){ return "quran_uthmani_" + n; }
-  function readCachedSurah(n){
-    if(quranMemCache[n]) return quranMemCache[n];
+  /* ============================================================
+     PAGE LOADING (localStorage cache first, then network)
+  ============================================================ */
+  function pageCacheKey(p){ return "quran_page_" + p; }
+  function readCachedPage(p){
+    if(pageMemCache[p]) return pageMemCache[p];
     try{
-      var raw = localStorage.getItem(cachedSurahKey(n));
-      if(raw){ var parsed = JSON.parse(raw); quranMemCache[n] = parsed; return parsed; }
-    }catch(e){ /* corrupt or unavailable cache — just refetch */ }
+      var raw = localStorage.getItem(pageCacheKey(p));
+      if(raw){ var parsed = JSON.parse(raw); pageMemCache[p] = parsed; return parsed; }
+    }catch(e){ /* corrupt cache — just refetch */ }
     return null;
   }
-  function writeCachedSurah(n, ayahs){
-    quranMemCache[n] = ayahs;
-    try{ localStorage.setItem(cachedSurahKey(n), JSON.stringify(ayahs)); }
-    catch(e){ /* quota full — memory cache still serves this session */ }
+  function writeCachedPage(p, ayahs){
+    pageMemCache[p] = ayahs;
+    try{ localStorage.setItem(pageCacheKey(p), JSON.stringify(ayahs)); }
+    catch(e){ /* quota full — the memory cache still serves this session */ }
   }
 
-  async function fetchSurah(n){
-    var res = await fetch(QURAN_API + n + "/quran-uthmani");
+  async function fetchPage(p){
+    var res = await fetch(QURAN_PAGE_API + p + "/quran-uthmani");
     if(!res.ok) throw new Error("HTTP " + res.status);
     var data = await res.json();
     if(!data || !data.data || !data.data.ayahs) throw new Error("unexpected response");
     return data.data.ayahs.map(function(a){
-      return { n: a.numberInSurah, t: a.text };
+      return { n:a.numberInSurah, t:a.text, s:a.surah.number, sn:a.surah.name, juz:a.juz };
     });
   }
 
-  function openSurah(n, scrollToAyah){
-    wirdState.surah = n;
+  function openSurah(n){
+    wirdState.wantSurah = n;
+    openPage(startPageFor(n));
+  }
+
+  function openPage(p){
+    p = Math.max(1, Math.min(LAST_PAGE, parseInt(p,10) || 1));
+    wirdState.page = p;
     document.getElementById("surahIndexCard").classList.add("hidden");
-    var jump = document.getElementById("bookmarkJumpBtn");
-    if(jump) jump.classList.add("hidden");
-    var card = document.getElementById("surahReaderCard");
-    card.classList.remove("hidden");
-    document.getElementById("readerTitle").textContent = "سورة " + SURAHS[n-1][0];
+    document.getElementById("bookmarksCard").classList.add("hidden");
+    document.getElementById("mushafCard").classList.remove("hidden");
+    var jump = document.getElementById("pageJumpInput");
+    if(jump) jump.value = p;
+    updatePageButtons();
+    updateBookmarkButton();
 
-    var cached = readCachedSurah(n);
-    if(cached){ wirdState.ayahs = cached; renderAyahs(scrollToAyah); return; }
+    var cached = readCachedPage(p);
+    if(cached){ wirdState.ayahs = cached; renderPage(); return; }
 
-    document.getElementById("ayahList").innerHTML =
+    document.getElementById("mushafPage").innerHTML =
       '<div class="reader-status">'+escapeHtml(tr("wirdLoading"))+'</div>';
     wirdState.loading = true;
-    fetchSurah(n).then(function(ayahs){
+    fetchPage(p).then(function(ayahs){
       wirdState.loading = false;
-      if(wirdState.surah !== n) return; // user moved on while it downloaded
-      writeCachedSurah(n, ayahs);
+      if(wirdState.page !== p) return; // the user moved on while it downloaded
+      writeCachedPage(p, ayahs);
       wirdState.ayahs = ayahs;
-      renderAyahs(scrollToAyah);
+      renderPage();
+      verifyRequestedSurahOnPage(p, ayahs);
     }).catch(function(e){
       wirdState.loading = false;
-      console.warn("Quran fetch failed:", e);
-      if(wirdState.surah !== n) return;
-      var box = document.getElementById("ayahList");
+      console.warn("Quran page fetch failed:", e);
+      if(wirdState.page !== p) return;
+      var box = document.getElementById("mushafPage");
       box.innerHTML = '<div class="reader-status">'+escapeHtml(tr("wirdLoadFailed"))+
-        '<br><button class="btn-solid" id="retrySurahBtn" style="max-width:200px;">'+escapeHtml(tr("wirdRetry"))+'</button></div>';
-      var retry = document.getElementById("retrySurahBtn");
-      if(retry) retry.addEventListener("click", function(){ openSurah(n, scrollToAyah); });
+        '<br><button class="btn-solid" id="retryPageBtn">'+escapeHtml(tr("wirdRetry"))+'</button></div>';
+      var retry = document.getElementById("retryPageBtn");
+      if(retry) retry.addEventListener("click", function(){ openPage(p); });
     });
   }
 
-  function renderAyahs(scrollToAyah){
-    var box = document.getElementById("ayahList");
-    if(!box || !wirdState.ayahs) return;
-    var bm = loadBookmark();
-    box.innerHTML = "";
-    // Every surah except Al-Fatihah (1) and At-Tawbah (9) opens with the
-    // basmala; in the Uthmani text it is already part of ayah 1 for
-    // Al-Fatihah, so it's only drawn separately here where it belongs.
-    if(wirdState.surah !== 1 && wirdState.surah !== 9){
-      var b = document.createElement("div");
-      b.className = "basmala";
-      b.textContent = "بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ";
-      box.appendChild(b);
-    }
-    wirdState.ayahs.forEach(function(a){
-      var el = document.createElement("div");
-      el.className = "ayah" + (bm && bm.surah === wirdState.surah && bm.ayah === a.n ? " bookmarked" : "");
-      el.setAttribute("data-ayah", a.n);
-      el.innerHTML = escapeHtml(a.t) + '<span class="ayah-num">'+toArabicDigits(a.n)+'</span>';
-      // Tapping any verse bookmarks exactly that verse.
-      el.addEventListener("click", function(){
-        saveBookmark(wirdState.surah, a.n);
-        renderAyahs(null);
-      });
-      box.appendChild(el);
-    });
-    if(scrollToAyah){
-      var target = box.querySelector('[data-ayah="'+scrollToAyah+'"]');
-      if(target && target.scrollIntoView){
-        setTimeout(function(){ target.scrollIntoView({block:"center"}); }, 60);
-      }
-    }
-  }
-
-  // The header bookmark button saves the verse currently at the top of the
-  // screen, which is the closest thing to "exactly where I stopped".
-  function bookmarkVisiblePosition(){
-    if(!wirdState.surah || !wirdState.ayahs){ return; }
-    var rows = document.querySelectorAll("#ayahList .ayah");
-    var chosen = null;
-    for(var i=0;i<rows.length;i++){
-      var r = rows[i].getBoundingClientRect();
-      if(r.bottom > 90){ chosen = rows[i]; break; }
-    }
-    if(!chosen && rows.length){ chosen = rows[rows.length-1]; }
-    if(!chosen) return;
-    saveBookmark(wirdState.surah, parseInt(chosen.getAttribute("data-ayah"), 10));
-    renderAyahs(null);
-  }
-
-  function backToSurahIndex(){
-    wirdState.surah = null;
-    document.getElementById("surahReaderCard").classList.add("hidden");
-    document.getElementById("surahIndexCard").classList.remove("hidden");
-    renderBookmarkShortcut();
+  // If the page we jumped to doesn't actually start the requested surah,
+  // ask the API where ayah 1 really lives, remember it, and go there.
+  function verifyRequestedSurahOnPage(p, ayahs){
+    var want = wirdState.wantSurah;
+    wirdState.wantSurah = null;
+    if(!want) return;
+    var found = ayahs.some(function(a){ return a.s === want && a.n === 1; });
+    if(found) return;
+    fetch(QURAN_AYAH_API + want + ":1/quran-uthmani").then(function(r){ return r.json(); })
+      .then(function(d){
+        var realPage = d && d.data && d.data.page;
+        if(realPage && realPage !== p){
+          rememberStartPageFix(want, realPage);
+          openPage(realPage);
+          renderSurahIndex(document.getElementById("surahSearch").value);
+        }
+      }).catch(function(){ /* offline — the page we showed is still readable */ });
   }
 
   /* ============================================================
-     ZIKR DATA
+     PAGE RENDERING — laid out like a printed mushaf page
+  ============================================================ */
+  function renderPage(){
+    var box = document.getElementById("mushafPage");
+    if(!box || !wirdState.ayahs) return;
+    var ayahs = wirdState.ayahs;
+
+    var names = [];
+    ayahs.forEach(function(a){ if(names.indexOf(a.sn) === -1) names.push(a.sn); });
+    var juz = ayahs.length ? ayahs[0].juz : "";
+
+    var html = '<div class="page-head"><span>'+escapeHtml(names.join(" · "))+'</span>'+
+               '<span>'+tr("wirdJuz")+' '+toArabicDigits(juz)+'</span></div><div class="page-body">';
+
+    var currentSurah = null;
+    var open = false;
+    ayahs.forEach(function(a){
+      if(a.s !== currentSurah){
+        if(open){ html += '</div>'; open = false; }
+        currentSurah = a.s;
+        // A surah banner is only drawn where the surah actually begins on
+        // this page — mid-surah pages just continue the text.
+        if(a.n === 1){
+          html += '<div class="surah-banner">سورة '+escapeHtml(a.sn)+'</div>';
+          if(a.s !== 1 && a.s !== 9){
+            html += '<div class="basmala">بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ</div>';
+          }
+        }
+        html += '<div class="page-text">';
+        open = true;
+      }
+      html += escapeHtml(a.t) + '<span class="ayah-num">'+toArabicDigits(a.n)+'</span> ';
+    });
+    if(open){ html += '</div>'; }
+    html += '</div><div class="page-foot">'+tr("wirdPage")+' '+toArabicDigits(wirdState.page)+
+            ' / '+toArabicDigits(LAST_PAGE)+'</div>';
+    box.innerHTML = html;
+
+    var title = document.getElementById("readerTitle");
+    if(title) title.textContent = names.length ? ("سورة " + names.join(" · ")) : "";
+    updateBookmarkButton();
+    updatePageButtons();
+  }
+
+  function updatePageButtons(){
+    var prev = document.getElementById("prevPageBtn");
+    var next = document.getElementById("nextPageBtn");
+    if(prev){ prev.disabled = wirdState.page <= 1; prev.textContent = "› " + tr("wirdPrevPage"); }
+    if(next){ next.disabled = wirdState.page >= LAST_PAGE; next.textContent = tr("wirdNextPage") + " ‹"; }
+  }
+
+  function goNextPage(){ if(wirdState.page < LAST_PAGE){ openPage(wirdState.page + 1); scrollReaderTop(); } }
+  function goPrevPage(){ if(wirdState.page > 1){ openPage(wirdState.page - 1); scrollReaderTop(); } }
+  function scrollReaderTop(){
+    var card = document.getElementById("mushafCard");
+    if(card && card.scrollIntoView){ try{ card.scrollIntoView({block:"start"}); }catch(e){} }
+  }
+
+  function backToSurahIndex(){
+    document.getElementById("mushafCard").classList.add("hidden");
+    document.getElementById("surahIndexCard").classList.remove("hidden");
+    document.getElementById("bookmarksCard").classList.remove("hidden");
+    renderBookmarkList();
+  }
+
+  /* ============================================================
+     ZIKR DATA — seven panels
      A curated selection of well-known adhkar as they appear in
      Hisn al-Muslim, with the repetition counts reported there.
   ============================================================ */
   var AYAT_KURSI = "اللَّهُ لَا إِلَٰهَ إِلَّا هُوَ الْحَيُّ الْقَيُّومُ، لَا تَأْخُذُهُ سِنَةٌ وَلَا نَوْمٌ، لَهُ مَا فِي السَّمَاوَاتِ وَمَا فِي الْأَرْضِ، مَنْ ذَا الَّذِي يَشْفَعُ عِنْدَهُ إِلَّا بِإِذْنِهِ، يَعْلَمُ مَا بَيْنَ أَيْدِيهِمْ وَمَا خَلْفَهُمْ، وَلَا يُحِيطُونَ بِشَيْءٍ مِنْ عِلْمِهِ إِلَّا بِمَا شَاءَ، وَسِعَ كُرْسِيُّهُ السَّمَاوَاتِ وَالْأَرْضَ، وَلَا يَئُودُهُ حِفْظُهُمَا، وَهُوَ الْعَلِيُّ الْعَظِيمُ.";
   var THREE_QULS = "قُلْ هُوَ اللَّهُ أَحَدٌ • اللَّهُ الصَّمَدُ • لَمْ يَلِدْ وَلَمْ يُولَدْ • وَلَمْ يَكُنْ لَهُ كُفُوًا أَحَدٌ.\nقُلْ أَعُوذُ بِرَبِّ الْفَلَقِ • مِنْ شَرِّ مَا خَلَقَ • وَمِنْ شَرِّ غَاسِقٍ إِذَا وَقَبَ • وَمِنْ شَرِّ النَّفَّاثَاتِ فِي الْعُقَدِ • وَمِنْ شَرِّ حَاسِدٍ إِذَا حَسَدَ.\nقُلْ أَعُوذُ بِرَبِّ النَّاسِ • مَلِكِ النَّاسِ • إِلَٰهِ النَّاسِ • مِنْ شَرِّ الْوَسْوَاسِ الْخَنَّاسِ • الَّذِي يُوَسْوِسُ فِي صُدُورِ النَّاسِ • مِنَ الْجِنَّةِ وَالنَّاسِ.";
+  var SAYYID_ISTIGHFAR = "اللَّهُمَّ أَنْتَ رَبِّي لَا إِلَٰهَ إِلَّا أَنْتَ، خَلَقْتَنِي وَأَنَا عَبْدُكَ، وَأَنَا عَلَىٰ عَهْدِكَ وَوَعْدِكَ مَا اسْتَطَعْتُ، أَعُوذُ بِكَ مِنْ شَرِّ مَا صَنَعْتُ، أَبُوءُ لَكَ بِنِعْمَتِكَ عَلَيَّ، وَأَبُوءُ بِذَنْبِي فَاغْفِرْ لِي فَإِنَّهُ لَا يَغْفِرُ الذُّنُوبَ إِلَّا أَنْتَ.";
 
   var ZIKR_GROUPS = [
     {
@@ -3004,7 +3220,7 @@
         { id:"m1", note:"آية الكرسي", count:1, text:AYAT_KURSI },
         { id:"m2", note:"الإخلاص والمعوذتان", count:3, text:THREE_QULS },
         { id:"m3", note:"", count:1, text:"أَصْبَحْنَا وَأَصْبَحَ الْمُلْكُ لِلَّهِ، وَالْحَمْدُ لِلَّهِ، لَا إِلَٰهَ إِلَّا اللَّهُ وَحْدَهُ لَا شَرِيكَ لَهُ، لَهُ الْمُلْكُ وَلَهُ الْحَمْدُ وَهُوَ عَلَىٰ كُلِّ شَيْءٍ قَدِيرٌ. رَبِّ أَسْأَلُكَ خَيْرَ مَا فِي هَٰذَا الْيَوْمِ وَخَيْرَ مَا بَعْدَهُ، وَأَعُوذُ بِكَ مِنْ شَرِّ مَا فِي هَٰذَا الْيَوْمِ وَشَرِّ مَا بَعْدَهُ." },
-        { id:"m4", note:"سيد الاستغفار", count:1, text:"اللَّهُمَّ أَنْتَ رَبِّي لَا إِلَٰهَ إِلَّا أَنْتَ، خَلَقْتَنِي وَأَنَا عَبْدُكَ، وَأَنَا عَلَىٰ عَهْدِكَ وَوَعْدِكَ مَا اسْتَطَعْتُ، أَعُوذُ بِكَ مِنْ شَرِّ مَا صَنَعْتُ، أَبُوءُ لَكَ بِنِعْمَتِكَ عَلَيَّ، وَأَبُوءُ بِذَنْبِي فَاغْفِرْ لِي فَإِنَّهُ لَا يَغْفِرُ الذُّنُوبَ إِلَّا أَنْتَ." },
+        { id:"m4", note:"سيد الاستغفار", count:1, text:SAYYID_ISTIGHFAR },
         { id:"m5", note:"", count:1, text:"اللَّهُمَّ بِكَ أَصْبَحْنَا، وَبِكَ أَمْسَيْنَا، وَبِكَ نَحْيَا، وَبِكَ نَمُوتُ، وَإِلَيْكَ النُّشُورُ." },
         { id:"m6", note:"", count:3, text:"رَضِيتُ بِاللَّهِ رَبًّا، وَبِالْإِسْلَامِ دِينًا، وَبِمُحَمَّدٍ ﷺ نَبِيًّا." },
         { id:"m7", note:"", count:7, text:"حَسْبِيَ اللَّهُ لَا إِلَٰهَ إِلَّا هُوَ، عَلَيْهِ تَوَكَّلْتُ، وَهُوَ رَبُّ الْعَرْشِ الْعَظِيمِ." },
@@ -3024,7 +3240,7 @@
         { id:"e1", note:"آية الكرسي", count:1, text:AYAT_KURSI },
         { id:"e2", note:"الإخلاص والمعوذتان", count:3, text:THREE_QULS },
         { id:"e3", note:"", count:1, text:"أَمْسَيْنَا وَأَمْسَى الْمُلْكُ لِلَّهِ، وَالْحَمْدُ لِلَّهِ، لَا إِلَٰهَ إِلَّا اللَّهُ وَحْدَهُ لَا شَرِيكَ لَهُ، لَهُ الْمُلْكُ وَلَهُ الْحَمْدُ وَهُوَ عَلَىٰ كُلِّ شَيْءٍ قَدِيرٌ. رَبِّ أَسْأَلُكَ خَيْرَ مَا فِي هَٰذِهِ اللَّيْلَةِ وَخَيْرَ مَا بَعْدَهَا، وَأَعُوذُ بِكَ مِنْ شَرِّ مَا فِي هَٰذِهِ اللَّيْلَةِ وَشَرِّ مَا بَعْدَهَا." },
-        { id:"e4", note:"سيد الاستغفار", count:1, text:"اللَّهُمَّ أَنْتَ رَبِّي لَا إِلَٰهَ إِلَّا أَنْتَ، خَلَقْتَنِي وَأَنَا عَبْدُكَ، وَأَنَا عَلَىٰ عَهْدِكَ وَوَعْدِكَ مَا اسْتَطَعْتُ، أَعُوذُ بِكَ مِنْ شَرِّ مَا صَنَعْتُ، أَبُوءُ لَكَ بِنِعْمَتِكَ عَلَيَّ، وَأَبُوءُ بِذَنْبِي فَاغْفِرْ لِي فَإِنَّهُ لَا يَغْفِرُ الذُّنُوبَ إِلَّا أَنْتَ." },
+        { id:"e4", note:"سيد الاستغفار", count:1, text:SAYYID_ISTIGHFAR },
         { id:"e5", note:"", count:1, text:"اللَّهُمَّ بِكَ أَمْسَيْنَا، وَبِكَ أَصْبَحْنَا، وَبِكَ نَحْيَا، وَبِكَ نَمُوتُ، وَإِلَيْكَ الْمَصِيرُ." },
         { id:"e6", note:"", count:3, text:"رَضِيتُ بِاللَّهِ رَبًّا، وَبِالْإِسْلَامِ دِينًا، وَبِمُحَمَّدٍ ﷺ نَبِيًّا." },
         { id:"e7", note:"", count:7, text:"حَسْبِيَ اللَّهُ لَا إِلَٰهَ إِلَّا هُوَ، عَلَيْهِ تَوَكَّلْتُ، وَهُوَ رَبُّ الْعَرْشِ الْعَظِيمِ." },
@@ -3050,6 +3266,60 @@
         { id:"s8", note:"", count:3, text:"اللَّهُمَّ قِنِي عَذَابَكَ يَوْمَ تَبْعَثُ عِبَادَكَ." },
         { id:"s9", note:"", count:1, text:"الْحَمْدُ لِلَّهِ الَّذِي أَطْعَمَنَا وَسَقَانَا، وَكَفَانَا، وَآوَانَا، فَكَمْ مِمَّنْ لَا كَافِيَ لَهُ وَلَا مُؤْوِيَ." },
         { id:"s10", note:"", count:1, text:"بِاسْمِكَ اللَّهُمَّ أَمُوتُ وَأَحْيَا." }
+      ]
+    },
+    {
+      id:"waking", icon:"🌤️", ar:"أذكار الاستيقاظ", en:"Waking Up Remembrance",
+      items:[
+        { id:"w1", note:"", count:1, text:"الْحَمْدُ لِلَّهِ الَّذِي أَحْيَانَا بَعْدَ مَا أَمَاتَنَا وَإِلَيْهِ النُّشُورُ." },
+        { id:"w2", note:"لمن استيقظ من الليل", count:1, text:"لَا إِلَٰهَ إِلَّا اللَّهُ وَحْدَهُ لَا شَرِيكَ لَهُ، لَهُ الْمُلْكُ وَلَهُ الْحَمْدُ وَهُوَ عَلَىٰ كُلِّ شَيْءٍ قَدِيرٌ، سُبْحَانَ اللَّهِ، وَالْحَمْدُ لِلَّهِ، وَلَا إِلَٰهَ إِلَّا اللَّهُ، وَاللَّهُ أَكْبَرُ، وَلَا حَوْلَ وَلَا قُوَّةَ إِلَّا بِاللَّهِ الْعَلِيِّ الْعَظِيمِ. رَبِّ اغْفِرْ لِي." },
+        { id:"w3", note:"", count:1, text:"الْحَمْدُ لِلَّهِ الَّذِي عَافَانِي فِي جَسَدِي، وَرَدَّ عَلَيَّ رُوحِي، وَأَذِنَ لِي بِذِكْرِهِ." },
+        { id:"w4", note:"خواتيم سورة آل عمران", count:1, text:"إِنَّ فِي خَلْقِ السَّمَاوَاتِ وَالْأَرْضِ وَاخْتِلَافِ اللَّيْلِ وَالنَّهَارِ لَآيَاتٍ لِأُولِي الْأَلْبَابِ • الَّذِينَ يَذْكُرُونَ اللَّهَ قِيَامًا وَقُعُودًا وَعَلَىٰ جُنُوبِهِمْ وَيَتَفَكَّرُونَ فِي خَلْقِ السَّمَاوَاتِ وَالْأَرْضِ رَبَّنَا مَا خَلَقْتَ هَٰذَا بَاطِلًا سُبْحَانَكَ فَقِنَا عَذَابَ النَّارِ." },
+        { id:"w5", note:"", count:1, text:"اللَّهُمَّ بِكَ أَصْبَحْنَا وَبِكَ أَمْسَيْنَا، وَبِكَ نَحْيَا وَبِكَ نَمُوتُ وَإِلَيْكَ النُّشُورُ." }
+      ]
+    },
+    {
+      id:"prayer", icon:"🕌", ar:"أذكار بعد الصلاة", en:"Remembrance After Prayer",
+      items:[
+        { id:"p1", note:"", count:3, text:"أَسْتَغْفِرُ اللَّهَ." },
+        { id:"p2", note:"", count:1, text:"اللَّهُمَّ أَنْتَ السَّلَامُ وَمِنْكَ السَّلَامُ، تَبَارَكْتَ يَا ذَا الْجَلَالِ وَالْإِكْرَامِ." },
+        { id:"p3", note:"", count:1, text:"لَا إِلَٰهَ إِلَّا اللَّهُ وَحْدَهُ لَا شَرِيكَ لَهُ، لَهُ الْمُلْكُ وَلَهُ الْحَمْدُ وَهُوَ عَلَىٰ كُلِّ شَيْءٍ قَدِيرٌ، اللَّهُمَّ لَا مَانِعَ لِمَا أَعْطَيْتَ، وَلَا مُعْطِيَ لِمَا مَنَعْتَ، وَلَا يَنْفَعُ ذَا الْجَدِّ مِنْكَ الْجَدُّ." },
+        { id:"p4", note:"", count:1, text:"لَا حَوْلَ وَلَا قُوَّةَ إِلَّا بِاللَّهِ، لَا إِلَٰهَ إِلَّا اللَّهُ، وَلَا نَعْبُدُ إِلَّا إِيَّاهُ، لَهُ النِّعْمَةُ وَلَهُ الْفَضْلُ وَلَهُ الثَّنَاءُ الْحَسَنُ." },
+        { id:"p5", note:"دبر كل صلاة", count:1, text:"اللَّهُمَّ أَعِنِّي عَلَىٰ ذِكْرِكَ وَشُكْرِكَ وَحُسْنِ عِبَادَتِكَ." },
+        { id:"p6", note:"آية الكرسي", count:1, text:AYAT_KURSI },
+        { id:"p7", note:"بعد الفجر والمغرب تُقرأ ثلاثًا", count:1, text:THREE_QULS },
+        { id:"p8", note:"", count:33, text:"سُبْحَانَ اللَّهِ." },
+        { id:"p9", note:"", count:33, text:"الْحَمْدُ لِلَّهِ." },
+        { id:"p10", note:"", count:33, text:"اللَّهُ أَكْبَرُ." },
+        { id:"p11", note:"تمام المائة", count:1, text:"لَا إِلَٰهَ إِلَّا اللَّهُ وَحْدَهُ لَا شَرِيكَ لَهُ، لَهُ الْمُلْكُ وَلَهُ الْحَمْدُ وَهُوَ عَلَىٰ كُلِّ شَيْءٍ قَدِيرٌ." }
+      ]
+    },
+    {
+      id:"ruqyah", icon:"🤲", ar:"الرقية الشرعية", en:"Islamic Ruqyah",
+      items:[
+        { id:"r1", note:"سورة الفاتحة", count:3, text:"بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ • الْحَمْدُ لِلَّهِ رَبِّ الْعَالَمِينَ • الرَّحْمَٰنِ الرَّحِيمِ • مَالِكِ يَوْمِ الدِّينِ • إِيَّاكَ نَعْبُدُ وَإِيَّاكَ نَسْتَعِينُ • اهْدِنَا الصِّرَاطَ الْمُسْتَقِيمَ • صِرَاطَ الَّذِينَ أَنْعَمْتَ عَلَيْهِمْ غَيْرِ الْمَغْضُوبِ عَلَيْهِمْ وَلَا الضَّالِّينَ." },
+        { id:"r2", note:"آية الكرسي", count:3, text:AYAT_KURSI },
+        { id:"r3", note:"الإخلاص والمعوذتان", count:3, text:THREE_QULS },
+        { id:"r4", note:"", count:3, text:"أَعُوذُ بِكَلِمَاتِ اللَّهِ التَّامَّاتِ مِنْ كُلِّ شَيْطَانٍ وَهَامَّةٍ، وَمِنْ كُلِّ عَيْنٍ لَامَّةٍ." },
+        { id:"r5", note:"", count:3, text:"بِسْمِ اللَّهِ أَرْقِيكَ، مِنْ كُلِّ شَيْءٍ يُؤْذِيكَ، مِنْ شَرِّ كُلِّ نَفْسٍ أَوْ عَيْنِ حَاسِدٍ، اللَّهُ يَشْفِيكَ، بِسْمِ اللَّهِ أَرْقِيكَ." },
+        { id:"r6", note:"", count:3, text:"اللَّهُمَّ رَبَّ النَّاسِ، أَذْهِبِ الْبَأْسَ، اشْفِ أَنْتَ الشَّافِي، لَا شِفَاءَ إِلَّا شِفَاؤُكَ، شِفَاءً لَا يُغَادِرُ سَقَمًا." },
+        { id:"r7", note:"لعيادة المريض", count:7, text:"أَسْأَلُ اللَّهَ الْعَظِيمَ رَبَّ الْعَرْشِ الْعَظِيمِ أَنْ يَشْفِيَكَ." },
+        { id:"r8", note:"يضع يده على موضع الألم", count:7, text:"بِسْمِ اللَّهِ (ثلاثًا)، أَعُوذُ بِاللَّهِ وَقُدْرَتِهِ مِنْ شَرِّ مَا أَجِدُ وَأُحَاذِرُ." }
+      ]
+    },
+    {
+      id:"duaa", icon:"✨", ar:"مختارات من دعاء النبي ﷺ", en:"Selections from the Prophet's Supplications",
+      items:[
+        { id:"d1", note:"", count:1, text:"اللَّهُمَّ إِنِّي أَسْأَلُكَ الْهُدَىٰ وَالتُّقَىٰ وَالْعَفَافَ وَالْغِنَىٰ." },
+        { id:"d2", note:"", count:1, text:"اللَّهُمَّ أَصْلِحْ لِي دِينِي الَّذِي هُوَ عِصْمَةُ أَمْرِي، وَأَصْلِحْ لِي دُنْيَايَ الَّتِي فِيهَا مَعَاشِي، وَأَصْلِحْ لِي آخِرَتِي الَّتِي فِيهَا مَعَادِي، وَاجْعَلِ الْحَيَاةَ زِيَادَةً لِي فِي كُلِّ خَيْرٍ، وَاجْعَلِ الْمَوْتَ رَاحَةً لِي مِنْ كُلِّ شَرٍّ." },
+        { id:"d3", note:"", count:1, text:"رَبَّنَا آتِنَا فِي الدُّنْيَا حَسَنَةً وَفِي الْآخِرَةِ حَسَنَةً وَقِنَا عَذَابَ النَّارِ." },
+        { id:"d4", note:"", count:1, text:"اللَّهُمَّ إِنِّي أَعُوذُ بِكَ مِنَ الْهَمِّ وَالْحَزَنِ، وَالْعَجْزِ وَالْكَسَلِ، وَالْبُخْلِ وَالْجُبْنِ، وَضَلَعِ الدَّيْنِ وَغَلَبَةِ الرِّجَالِ." },
+        { id:"d5", note:"", count:1, text:"اللَّهُمَّ إِنِّي أَعُوذُ بِكَ مِنْ زَوَالِ نِعْمَتِكَ، وَتَحَوُّلِ عَافِيَتِكَ، وَفُجَاءَةِ نِقْمَتِكَ، وَجَمِيعِ سَخَطِكَ." },
+        { id:"d6", note:"", count:1, text:"يَا مُقَلِّبَ الْقُلُوبِ ثَبِّتْ قَلْبِي عَلَىٰ دِينِكَ، يَا مُصَرِّفَ الْقُلُوبِ صَرِّفْ قَلْبِي عَلَىٰ طَاعَتِكَ." },
+        { id:"d7", note:"", count:1, text:"اللَّهُمَّ إِنِّي أَسْأَلُكَ مِنَ الْخَيْرِ كُلِّهِ عَاجِلِهِ وَآجِلِهِ، مَا عَلِمْتُ مِنْهُ وَمَا لَمْ أَعْلَمْ، وَأَعُوذُ بِكَ مِنَ الشَّرِّ كُلِّهِ عَاجِلِهِ وَآجِلِهِ، مَا عَلِمْتُ مِنْهُ وَمَا لَمْ أَعْلَمْ." },
+        { id:"d8", note:"", count:1, text:"اللَّهُمَّ اغْفِرْ لِي ذَنْبِي كُلَّهُ، دِقَّهُ وَجِلَّهُ، وَأَوَّلَهُ وَآخِرَهُ، وَعَلَانِيَتَهُ وَسِرَّهُ." },
+        { id:"d9", note:"", count:1, text:"اللَّهُمَّ إِنِّي أَعُوذُ بِكَ مِنْ عِلْمٍ لَا يَنْفَعُ، وَمِنْ قَلْبٍ لَا يَخْشَعُ، وَمِنْ نَفْسٍ لَا تَشْبَعُ، وَمِنْ دَعْوَةٍ لَا يُسْتَجَابُ لَهَا." },
+        { id:"d10", note:"", count:1, text:"اللَّهُمَّ إِنَّكَ عَفُوٌّ كَرِيمٌ تُحِبُّ الْعَفْوَ فَاعْفُ عَنِّي." }
       ]
     }
   ];
@@ -3104,7 +3374,7 @@
           '<div class="zikr-foot">'+
             '<span class="zikr-target">'+tr("wirdRepeat")+": "+toArabicDigits(item.count)+" "+tr("wirdTimes")+'</span>'+
             '<button class="zikr-reset" data-reset="1" title="'+tr("wirdResetCount")+'">↺</button>'+
-            '<button class="zikr-count-btn'+(remaining===0?" done":"")+'" data-count="1">'+
+            '<button class="zikr-count-btn'+(remaining===0?" done":"")+'" data-count="1"'+(remaining===0?' disabled':'')+'>'+
               (remaining === 0 ? "✓" : toArabicDigits(remaining))+
             '</button>'+
           '</div>';
@@ -3121,8 +3391,9 @@
           btn.classList.toggle("done", now === 0);
           card.classList.toggle("done", now === 0);
           if(now === 0){
-            // Update the "x / y finished" badge in the panel header without
-            // collapsing anything the user currently has open.
+            btn.disabled = true;
+            // Refresh the "x / y finished" badge without collapsing anything
+            // the user currently has open.
             var p2 = loadZikrProgress();
             var doneNow = group.items.filter(function(it){ return remainingFor(it, p2) === 0; }).length;
             head.querySelector(".surah-meta").textContent =
@@ -3145,7 +3416,9 @@
     });
   }
 
-  /* ---- Wird sub-tab switching + labels ---- */
+  /* ============================================================
+     WIRD SHELL — sub-tabs, labels, entry point, wiring
+  ============================================================ */
   function setWirdPane(which){
     wirdState.pane = which;
     document.getElementById("wirdPaneQuran").classList.toggle("hidden", which !== "quran");
@@ -3161,21 +3434,27 @@
     if(!tabQ || !tabZ) return;
     tabQ.textContent = state.lang === "ar" ? "القرآن الكريم" : "Quran / القرآن";
     tabZ.textContent = state.lang === "ar" ? "الأذكار" : "Zikr / الأذكار";
-    var title = document.getElementById("surahIndexTitle");
-    if(title) title.textContent = tr("wirdSurahIndex");
+    var t1 = document.getElementById("bookmarksTitle");
+    if(t1) t1.textContent = tr("wirdBookmarks");
+    var t2 = document.getElementById("surahIndexTitle");
+    if(t2) t2.textContent = tr("wirdSurahIndex");
     var search = document.getElementById("surahSearch");
     if(search) search.setAttribute("placeholder", tr("wirdSearchPh"));
+    var hint = document.getElementById("pageHint");
+    if(hint) hint.textContent = tr("wirdPageHint");
     var note = document.getElementById("zikrSourceNote");
     if(note) note.textContent = tr("wirdZikrSource");
-    renderBookmarkShortcut();
+    updatePageButtons();
   }
 
-  // Called by setView("wird"): rebuilds the index and whichever pane is
-  // active, without disturbing a surah already open in the reader.
+  // Called by setView("wird"): rebuilds the lists and labels, without
+  // disturbing a page already open in the reader.
   function enterWird(){
     if(!state.user) return;
     renderWirdTexts();
-    renderSurahIndex(document.getElementById("surahSearch") ? document.getElementById("surahSearch").value : "");
+    renderBookmarkList();
+    var search = document.getElementById("surahSearch");
+    renderSurahIndex(search ? search.value : "");
     if(wirdState.pane === "zikr"){ renderZikrGroups(); }
   }
 
@@ -3191,14 +3470,47 @@
     var back = document.getElementById("backToIndexBtn");
     if(back) back.addEventListener("click", backToSurahIndex);
 
-    var bmHere = document.getElementById("bookmarkHereBtn");
-    if(bmHere) bmHere.addEventListener("click", bookmarkVisiblePosition);
+    var bm = document.getElementById("bookmarkToggleBtn");
+    if(bm) bm.addEventListener("click", toggleBookmarkForCurrentPage);
 
-    var jump = document.getElementById("bookmarkJumpBtn");
-    if(jump) jump.addEventListener("click", function(){
-      var bm = loadBookmark();
-      if(bm && bm.surah){ openSurah(bm.surah, bm.ayah); }
-    });
+    var next = document.getElementById("nextPageBtn");
+    if(next) next.addEventListener("click", goNextPage);
+    var prev = document.getElementById("prevPageBtn");
+    if(prev) prev.addEventListener("click", goPrevPage);
+
+    // Tap zones: in a mushaf the next page sits to the LEFT, so the left
+    // edge advances and the right edge goes back.
+    var tzNext = document.getElementById("tapNext");
+    if(tzNext) tzNext.addEventListener("click", goNextPage);
+    var tzPrev = document.getElementById("tapPrev");
+    if(tzPrev) tzPrev.addEventListener("click", goPrevPage);
+
+    // Horizontal swipe on the page, same direction convention.
+    var wrap = document.getElementById("mushafWrap");
+    if(wrap){
+      var sx = 0, sy = 0;
+      wrap.addEventListener("touchstart", function(e){
+        if(!e.touches || !e.touches[0]) return;
+        sx = e.touches[0].clientX; sy = e.touches[0].clientY;
+      }, {passive:true});
+      wrap.addEventListener("touchend", function(e){
+        if(!e.changedTouches || !e.changedTouches[0]) return;
+        var dx = e.changedTouches[0].clientX - sx;
+        var dy = e.changedTouches[0].clientY - sy;
+        if(Math.abs(dx) > 55 && Math.abs(dx) > Math.abs(dy) * 1.5){
+          if(dx < 0){ goNextPage(); } else { goPrevPage(); }
+        }
+      }, {passive:true});
+    }
+
+    var jump = document.getElementById("pageJumpInput");
+    if(jump){
+      jump.addEventListener("change", function(){
+        var v = parseInt(this.value, 10);
+        if(v >= 1 && v <= LAST_PAGE){ openPage(v); }
+        else { this.value = wirdState.page || 1; }
+      });
+    }
   })();
 
   /* ============================================================
